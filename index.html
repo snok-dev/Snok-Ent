@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snok Enterprise | Solar &amp; Inverter Store</title>
+  <meta name="description" content="Solar panels, inverters, batteries and accessories at retail and wholesale prices in Nigeria.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='24' fill='%23f59e0b'/></svg>">
+  <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+  <!-- Reminder shown until the store settings in config.js are filled in -->
+  <div id="setup-banner" hidden>
+    Store owner: update your WhatsApp number, phone, email and bank details in <code>config.js</code>.
+  </div>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="#/" class="logo">
+        <span class="logo-sun"></span>
+        <span class="logo-text">Snok <strong>Enterprise</strong></span>
+      </a>
+
+      <form id="header-search" class="header-search" role="search">
+        <input type="search" placeholder="Search panels, inverters, batteries..." aria-label="Search products">
+        <button type="submit" aria-label="Search">🔍</button>
+      </form>
+
+      <nav id="main-nav" class="main-nav">
+        <a href="#/" data-nav="home">Home</a>
+        <a href="#/shop" data-nav="shop">Shop</a>
+        <a href="#/calculator" data-nav="calculator">Solar Calculator</a>
+        <a href="#/about" data-nav="about">About</a>
+        <a href="#/contact" data-nav="contact">Contact</a>
+        <a href="#/orders" data-nav="orders">My Orders</a>
+      </nav>
+
+      <a href="#/cart" class="cart-link" aria-label="Cart">
+        🛒 <span id="cart-count" class="cart-count">0</span>
+      </a>
+      <button class="menu-button" data-action="toggle-menu" aria-label="Menu">☰</button>
+    </div>
+  </header>
+
+  <!-- Each page is drawn in here by app.js -->
+  <main id="app" class="container"></main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div>
+        <div class="logo footer-logo"><span class="logo-sun"></span><span class="logo-text">Snok <strong>Enterprise</strong></span></div>
+        <p id="footer-tagline"></p>
+      </div>
+      <div>
+        <h4>Shop</h4>
+        <ul id="footer-categories"></ul>
+      </div>
+      <div>
+        <h4>Help</h4>
+        <ul>
+          <li><a href="#/calculator">Solar Calculator</a></li>
+          <li><a href="#/about">About &amp; FAQ</a></li>
+          <li><a href="#/contact">Contact us</a></li>
+          <li><a href="#/orders">My Orders</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul id="footer-contact"></ul>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      © <span id="year"></span> Snok Enterprise. All rights reserved.
+    </div>
+  </footer>
+
+  <a id="whatsapp-float" class="whatsapp-float" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+    <svg viewBox="0 0 32 32" width="28" height="28" fill="white"><path d="M16 3C8.8 3 3 8.7 3 15.8c0 2.5.7 4.9 2 7L3 29l6.4-2c2 1.1 4.3 1.7 6.6 1.7 7.2 0 13-5.7 13-12.8S23.2 3 16 3zm0 23.4c-2.1 0-4.1-.6-5.9-1.7l-.4-.2-3.8 1.2 1.2-3.7-.3-.4c-1.2-1.8-1.8-3.8-1.8-5.9C5 9.9 9.9 5.2 16 5.2s11 4.7 11 10.6-4.9 10.6-11 10.6zm6-7.9c-.3-.2-2-1-2.3-1.1-.3-.1-.5-.2-.8.2-.2.3-.9 1.1-1.1 1.3-.2.2-.4.2-.7.1-.3-.2-1.4-.5-2.7-1.7-1-.9-1.7-2-1.9-2.3-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.4.3-.6.1-.2 0-.4 0-.6l-1-2.5c-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.8s1.2 3.2 1.4 3.4c.2.2 2.4 3.6 5.8 5 2.9 1.1 3.4.9 4.1.8.6-.1 2-.8 2.3-1.6.3-.8.3-1.5.2-1.6-.1-.1-.3-.2-.6-.4z"/></svg>
+  </a>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="config.js?v=1"></script>
+  <script src="products.js?v=1"></script>
+  <script src="app.js?v=1"></script>
+</body>
+</html>

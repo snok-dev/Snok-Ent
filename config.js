@@ -3,78 +3,90 @@
 // =====================================================================
 const STORE = {
   name: "Snok Enterprise",
-  tagline: "Solar panels, inverters, batteries & inverter appliances at retail and wholesale prices",
+  tagline: "Solar panels, batteries, inverters & energy-saving appliances for UK homes and businesses",
 
   // WhatsApp number that receives orders: country code + number, digits only
-  // e.g. 0803 123 4567  ->  "2348031234567"
-  whatsapp: "2348000000000",
+  // e.g. 07700 900123  ->  "447700900123"
+  whatsapp: "447700900000",
 
-  phone: "+234 800 000 0000",
+  phone: "+44 20 0000 0000",
   email: "orders@example.com",
-  address: "Shop address, City, State, Nigeria",
-  hours: "Monday – Saturday, 8:00am – 6:00pm",
+  address: "Unit 1, Example Business Park, Town, AB1 2CD, United Kingdom",
+  hours: "Monday – Friday 9:00am – 5:30pm, Saturday 9:00am – 1:00pm",
+
+  // Shown in the footer when filled in, e.g. "Snok Enterprise Ltd",
+  // "Registered in England & Wales No. 12345678", "GB123456789"
+  legalName: "",
+  companyNumber: "",
+  vatNumber: "",
 
   // Shown to customers who choose "Bank transfer"
   bank: {
     bankName: "Your Bank Name",
     accountName: "Snok Enterprise",
-    accountNumber: "0000000000"
+    sortCode: "00-00-00",
+    accountNumber: "00000000"
   },
 
   // ===================================================================
   //  BUY NOW, PAY LATER - your own instalment plans (SAMPLE terms - set your own)
-  //  - payments:  how many instalments after the deposit
-  //  - every:     "month" or "week"
-  //  - deposit:   part paid upfront, e.g. 0.3 = 30%
-  //  - markup:    extra added for paying over time, e.g. 0.1 = 10% (0 = no extra)
+  //  - payments:  how many monthly instalments after the deposit
+  //  - deposit:   part paid upfront, e.g. 0.2 = 20%
+  //  - markup:    extra added for paying over time, e.g. 0.1 = 10% (0 = interest-free)
   //  - collectAfterPaying: true = customer gets the goods after the final payment
+  //
+  //  IMPORTANT (UK): offering credit to consumers is regulated by the
+  //  Financial Conduct Authority (FCA). Plans with interest or fees need
+  //  FCA authorisation. Interest-free, fee-free plans with no more than
+  //  12 payments over 12 months may be exempt, but get advice before you
+  //  change these terms. Save & Collect (pay before you receive) is not credit.
   // ===================================================================
   payLater: {
-    minimumAmount: 100000,
+    minimumAmount: 250,
     plans: [
       {
         id: "save-and-collect",
         name: "Save & Collect",
-        description: "Pay small small with no extra cost. We deliver once you've paid in full.",
-        payments: 3, every: "month", deposit: 0.2, markup: 0, collectAfterPaying: true
+        description: "Put down 10%, then save monthly over 6 months with no credit check. We deliver once you've paid in full.",
+        payments: 6, every: "month", deposit: 0.1, markup: 0, collectAfterPaying: true
       },
       {
-        id: "12-weeks",
-        name: "12 Weeks",
-        description: "Weekly payments: great for traders and daily earners.",
-        payments: 12, every: "week", deposit: 0.3, markup: 0.06
-      },
-      {
-        id: "3-months",
-        name: "3 Months",
-        description: "Lowest extra cost. Get your goods after the deposit.",
-        payments: 3, every: "month", deposit: 0.4, markup: 0.05
+        id: "pay-in-3",
+        name: "Pay in 3",
+        description: "Split the cost into 3 equal payments: one today, then two monthly. Great for smaller purchases.",
+        payments: 2, every: "month", deposit: 0.34, markup: 0
       },
       {
         id: "6-months",
-        name: "6 Months",
-        description: "Our most popular plan for solar systems and inverter ACs.",
-        payments: 6, every: "month", deposit: 0.3, markup: 0.1
+        name: "6 Months 0%",
+        description: "Our most popular plan for solar and battery systems.",
+        payments: 6, every: "month", deposit: 0.2, markup: 0
       },
       {
-        id: "9-months",
-        name: "9 Months",
-        description: "Smaller monthly payments for bigger purchases.",
-        payments: 9, every: "month", deposit: 0.3, markup: 0.15
+        id: "10-months",
+        name: "10 Months 0%",
+        description: "Smaller monthly payments for larger purchases.",
+        payments: 10, every: "month", deposit: 0.2, markup: 0
       },
       {
         id: "12-months",
-        name: "12 Months",
-        description: "Smallest monthly payments, spread over a full year.",
-        payments: 12, every: "month", deposit: 0.25, markup: 0.2
+        name: "12 Months 0%",
+        description: "Lowest monthly payments, spread over a full year.",
+        payments: 11, every: "month", deposit: 0.25, markup: 0
+      },
+      {
+        id: "business-12",
+        name: "Business 12 Months",
+        description: "For registered businesses: spread the cost of equipment over a year.",
+        payments: 11, every: "month", deposit: 0.1, markup: 0, businessOnly: true
       }
     ],
     requirements: [
-      "Valid ID: NIN slip, driver's licence, voter's card or international passport",
-      "Proof of income: last 3 months' payslips or 6 months' bank statement (or business records)",
-      "One guarantor with a valid ID and phone number",
-      "Recent utility bill or other proof of address",
-      "Deposit paid after your application is approved"
+      "Photo ID: passport or UK driving licence",
+      "Proof of address from the last 3 months (utility bill, council tax bill or bank statement)",
+      "Proof of income: last 3 months' payslips or bank statements (businesses: recent accounts or business bank statements)",
+      "A UK bank account to pay your monthly instalments by standing order",
+      "Deposit paid once your application is approved"
     ]
   }
 };

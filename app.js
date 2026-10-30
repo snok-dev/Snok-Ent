@@ -12,15 +12,17 @@ function esc(text) {
   });
 }
 
-const nairaFormat = new Intl.NumberFormat("en-NG", {
+const poundsFormat = new Intl.NumberFormat("en-GB", {
   style: "currency",
-  currency: "NGN",
+  currency: "GBP",
   minimumFractionDigits: 0,
   maximumFractionDigits: 0
 });
+const penceFormat = new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" });
 
+// £1,299 for whole pounds, £12.50 when there are pence
 function money(amount) {
-  return nairaFormat.format(amount);
+  return Number.isInteger(amount) ? poundsFormat.format(amount) : penceFormat.format(amount);
 }
 
 function getProduct(id) {
@@ -45,24 +47,29 @@ function getPlan(id) {
 
 // Work out what a customer pays on a plan for a given price
 function planBreakdown(plan, price) {
-  const total = Math.round(price * (1 + plan.markup));
-  // Round instalments up to the nearest ₦100, then the deposit covers the rest exactly
-  const instalment = Math.ceil((total * (1 - plan.deposit)) / plan.payments / 100) * 100;
-  const deposit = total - instalment * plan.payments;
+  const total = Math.round(price * (1 + plan.markup) * 100) / 100;
+  // Round instalments up to whole pounds, then the deposit covers the rest exactly
+  const instalment = Math.ceil((total * (1 - plan.deposit)) / plan.payments);
+  const deposit = Math.round((total - instalment * plan.payments) * 100) / 100;
   return { deposit: deposit, instalment: instalment, total: total, extra: total - price };
 }
 
-// e.g. "₦45,000 today, then ₦30,000 per month × 6"
+// e.g. "£300 today, then £200 per month × 6"
 function planSentence(plan, price) {
   const b = planBreakdown(plan, price);
   return money(b.deposit) + " today, then " + money(b.instalment) + " per " + plan.every + " × " + plan.payments;
 }
 
-// The smallest monthly payment available, for "from ₦X/month" labels
+// True when no plan adds any extra cost
+function allPlansInterestFree() {
+  return STORE.payLater.plans.every(function (plan) { return plan.markup === 0; });
+}
+
+// The smallest monthly payment available, for "from £X/month" labels
 function lowestMonthly(price) {
   let lowest = null;
   STORE.payLater.plans.forEach(function (plan) {
-    if (plan.every !== "month" || plan.collectAfterPaying) return;
+    if (plan.every !== "month" || plan.collectAfterPaying || plan.businessOnly) return;
     const instalment = planBreakdown(plan, price).instalment;
     if (lowest === null || instalment < lowest) lowest = instalment;
   });
@@ -103,13 +110,22 @@ function toast(message) {
   toastTimer = setTimeout(function () { box.classList.remove("show"); }, 2500);
 }
 
-const NIGERIAN_STATES = [
-  "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno",
-  "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT - Abuja", "Gombe",
-  "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos",
-  "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto",
-  "Taraba", "Yobe", "Zamfara"
-];
+// UK postcodes, e.g. "SW1A 1AA", "M1 1AE", "B33 8TH"
+function isValidPostcode(text) {
+  return /^[A-Z]{1,2}[0-9][A-Z0-9]?\s*[0-9][A-Z]{2}$/i.test(text.trim());
+}
+
+// UK numbers (07700 900123, +44 7700 900123, 020 7946 0000) or other international numbers
+function isValidPhone(text) {
+  const digits = text.replace(/[\s\-()]/g, "");
+  return /^(0\d{9,10}|\+44\d{9,10}|\+\d{10,14})$/.test(digits);
+}
+
+// Joins the parts of an address that were filled in
+function formatAddress(c) {
+  return [c.address, c.address2, c.city, c.county, (c.postcode || "").toUpperCase()]
+    .filter(function (part) { return part; }).join(", ");
+}
 
 // ----- Product pictures -----
 // Simple drawings for each category, used when a product has no photo.
@@ -213,7 +229,7 @@ function productCard(product) {
       '<div class="card-body">' +
         '<span class="card-category">' + esc(categoryName(product.category)) + "</span>" +
         '<a href="#/product/' + product.id + '" class="card-title">' + esc(product.name) + "</a>" +
-        '<div class="card-price">' + money(product.retailPrice) + "</div>" +
+        '<div class="card-price">' + money(product.retailPrice) + ' <small class="vat">inc. VAT</small></div>' +
         '<div class="card-wholesale">Wholesale: <strong>' + money(product.wholesalePrice) + "</strong> each for " + product.wholesaleMinQty + "+ units</div>" +
         button +
       "</div>" +
@@ -228,8 +244,8 @@ function renderHome() {
     '<section class="hero">' +
       '<div class="hero-text">' +
         '<span class="eyebrow">Solar &amp; inverter specialists</span>' +
-        "<h1>Steady power for your home and business</h1>" +
-        "<p>" + esc(STORE.tagline) + ". Buy one unit at retail price, or buy in bulk and pay wholesale prices automatically.</p>" +
+        "<h1>Cut your energy bills. Keep the power on.</h1>" +
+        "<p>" + esc(STORE.tagline) + ". Buy one unit at retail price, or buy in bulk and pay trade prices automatically. All prices include VAT.</p>" +
         '<div class="hero-buttons">' +
           '<a href="#/shop" class="btn btn-primary btn-large">Shop now</a>' +
           '<a href="#/calculator" class="btn btn-light btn-large">Size my solar system</a>' +
@@ -240,7 +256,7 @@ function renderHome() {
 
     '<section class="benefits">' +
       '<div><strong>Retail &amp; wholesale</strong><span>Bulk prices apply automatically</span></div>' +
-      '<div><strong>Delivery across Nigeria</strong><span>Or pick up from our shop</span></div>' +
+      '<div><strong>UK-wide delivery</strong><span>Or collect from our premises</span></div>' +
       '<a href="#/pay-later"><strong>Buy now, pay later</strong><span>Spread payments over up to 12 months</span></a>' +
       '<div><strong>Expert advice</strong><span>Chat with us on WhatsApp</span></div>' +
     "</section>" +
@@ -264,16 +280,16 @@ function renderHome() {
 
     '<section class="wholesale-banner">' +
       "<div><h2>Buying for your business or a project?</h2>" +
-      "<p>Installers, resellers and contractors pay wholesale prices once they reach the minimum quantity shown on each product. Need a bigger quote? Message us.</p></div>" +
+      "<p>Installers, electricians, resellers and businesses pay wholesale prices once they reach the minimum quantity shown on each product. VAT invoices provided. Need a bigger quote? Message us.</p></div>" +
       '<a class="btn btn-whatsapp btn-large" target="_blank" rel="noopener" href="' +
         whatsappLink("Hello " + STORE.name + ", I'd like a wholesale quote.") + '">Get a wholesale quote</a>' +
     "</section>" +
 
     '<section class="paylater-banner">' +
       "<div><span class=\"eyebrow\">Buy now, pay later</span>" +
-      "<h2>Get it today. Pay small small.</h2>" +
-      "<p>Solar systems, inverter ACs, fridges and more on " + STORE.payLater.plans.length +
-        " flexible plans: weekly or monthly, from 3 to 12 months.</p></div>" +
+      "<h2>Get it today. Spread the cost.</h2>" +
+      "<p>Solar and battery systems, heat pumps, fridges and more on " + STORE.payLater.plans.length +
+        (allPlansInterestFree() ? " interest-free" : " flexible") + " plans, from 3 to 12 months.</p></div>" +
       '<a href="#/pay-later" class="btn btn-primary btn-large">See payment plans</a>' +
     "</section>";
 }
@@ -285,7 +301,7 @@ function renderShop(params) {
   const sort = params.get("sort") || "featured";
 
   app.innerHTML =
-    '<div class="page-head"><h1>Shop</h1><p>Prices shown are retail. Wholesale prices apply automatically in your cart.</p></div>' +
+    '<div class="page-head"><h1>Shop</h1><p>All prices include VAT. Wholesale prices apply automatically in your cart.</p></div>' +
     '<div class="shop-layout">' +
       '<aside class="shop-filters">' +
         "<h3>Categories</h3>" +
@@ -384,7 +400,7 @@ function renderProduct(id) {
         (product.inStock ? '<span class="stock in">● In stock</span>' : '<span class="stock out">● Out of stock</span>') +
         '<p class="product-description">' + esc(product.description) + "</p>" +
         '<div class="price-table">' +
-          '<div><span>Retail price</span><strong>' + money(product.retailPrice) + "</strong><small>1 – " + (product.wholesaleMinQty - 1) + " units</small></div>" +
+          '<div><span>Retail price (inc. VAT)</span><strong>' + money(product.retailPrice) + "</strong><small>1 – " + (product.wholesaleMinQty - 1) + " units</small></div>" +
           '<div class="wholesale"><span>Wholesale price</span><strong>' + money(product.wholesalePrice) + "</strong><small>" + product.wholesaleMinQty + "+ units, each</small></div>" +
         "</div>" +
         (product.inStock
@@ -508,7 +524,7 @@ function renderCart() {
           ? '<div class="summary-row savings"><span>Wholesale savings</span><span>−' + money(summary.savings) + "</span></div>"
           : "") +
         '<div class="summary-row"><span>Delivery</span><span class="muted">Confirmed after order</span></div>' +
-        '<div class="summary-row total"><span>Total</span><span>' + money(summary.subtotal) + "</span></div>" +
+        '<div class="summary-row total"><span>Total (inc. VAT)</span><span>' + money(summary.subtotal) + "</span></div>" +
         '<a href="#/checkout" class="btn btn-primary btn-block btn-large">Proceed to checkout</a>' +
         (summary.subtotal >= STORE.payLater.minimumAmount
           ? '<a href="#/pay-later?cart=1" class="paylater-line small"><span>Or pay from <strong>' +
@@ -543,31 +559,29 @@ function renderCheckout() {
         "<h3>Your details</h3>" +
         '<div class="form-grid">' +
           field("name", "Full name", "text", saved.name, true) +
-          field("phone", "Phone number", "tel", saved.phone, true, "e.g. 0803 123 4567") +
-          field("email", "Email (optional)", "email", saved.email, false) +
+          field("phone", "Phone number", "tel", saved.phone, true, "e.g. 07700 900123") +
+          field("email", "Email", "email", saved.email, true) +
           field("company", "Business name (optional)", "text", saved.company, false) +
+          field("vatNumber", "Business VAT number (optional)", "text", saved.vatNumber, false, "For your VAT invoice") +
         "</div>" +
 
         "<h3>Delivery</h3>" +
         '<div class="radio-group">' +
-          '<label class="radio-card"><input type="radio" name="delivery" value="Delivery" checked><span><strong>Deliver to me</strong><small>Delivery cost depends on your location</small></span></label>' +
-          '<label class="radio-card"><input type="radio" name="delivery" value="Pickup"><span><strong>Pick up from shop</strong><small>' + esc(STORE.address) + "</small></span></label>" +
+          '<label class="radio-card"><input type="radio" name="delivery" value="Delivery" checked><span><strong>Deliver to me</strong><small>UK mainland. Highlands, islands and Northern Ireland may cost more</small></span></label>' +
+          '<label class="radio-card"><input type="radio" name="delivery" value="Collection"><span><strong>Collect from us</strong><small>' + esc(STORE.address) + "</small></span></label>" +
         "</div>" +
         '<div id="address-fields" class="form-grid">' +
-          field("address", "Delivery address", "text", saved.address, true, "House number, street, area") +
-          field("city", "City / Town", "text", saved.city, true) +
-          '<label class="field"><span>State <b>*</b></span><select name="state" required>' +
-            '<option value="">Choose your state</option>' +
-            NIGERIAN_STATES.map(function (s) {
-              return "<option" + (saved.state === s ? " selected" : "") + ">" + s + "</option>";
-            }).join("") +
-          '</select><em class="error"></em></label>' +
+          field("address", "Address line 1", "text", saved.address, true, "House number and street") +
+          field("address2", "Address line 2 (optional)", "text", saved.address2, false) +
+          field("city", "Town / City", "text", saved.city, true) +
+          field("county", "County (optional)", "text", saved.county, false) +
+          field("postcode", "Postcode", "text", saved.postcode, true, "e.g. SW1A 1AA") +
         "</div>" +
 
         "<h3>Payment</h3>" +
         '<div class="radio-group">' +
           '<label class="radio-card"><input type="radio" name="payment" value="Bank transfer" checked><span><strong>Bank transfer</strong><small>Account details shown after you place the order</small></span></label>' +
-          '<label class="radio-card"><input type="radio" name="payment" value="Pay on delivery / pickup"><span><strong>Pay on delivery or pickup</strong><small>Cash, transfer or POS when you receive your goods</small></span></label>' +
+          '<label class="radio-card" id="pay-on-collection"><input type="radio" name="payment" value="Pay on collection"><span><strong>Pay on collection</strong><small>Card or cash when you collect your order</small></span></label>' +
           (summary.subtotal >= STORE.payLater.minimumAmount
             ? '<label class="radio-card"><input type="radio" name="payment" value="Buy now, pay later"><span><strong>Buy now, pay later</strong><small>From ' +
                 money(lowestMonthly(summary.subtotal)) + "/month. Subject to approval</small></span></label>"
@@ -577,8 +591,8 @@ function renderCheckout() {
           "<strong>Choose your plan</strong>" +
           STORE.payLater.plans.map(function (plan, i) {
             const b = planBreakdown(plan, summary.subtotal);
-            return '<label class="plan-option"><input type="radio" name="plan" value="' + plan.id + '"' + (i === 3 ? " checked" : "") + ">" +
-              "<span><strong>" + esc(plan.name) + "</strong>" +
+            return '<label class="plan-option"><input type="radio" name="plan" value="' + plan.id + '"' + (plan.id === "6-months" || (i === 0 && !getPlan("6-months")) ? " checked" : "") + ">" +
+              "<span><strong>" + esc(plan.name) + (plan.businessOnly ? ' <span class="tag-wholesale">businesses</span>' : "") + "</strong>" +
               "<small>" + planSentence(plan, summary.subtotal) + "</small></span>" +
               "<span class=\"plan-total\">" + money(b.total) + "</span></label>";
           }).join("") +
@@ -597,17 +611,26 @@ function renderCheckout() {
           ? '<div class="summary-row savings"><span>Wholesale savings</span><span>−' + money(summary.savings) + "</span></div>"
           : "") +
         '<div class="summary-row"><span>Delivery</span><span class="muted">Confirmed after order</span></div>' +
-        '<div class="summary-row total"><span>Total</span><span>' + money(summary.subtotal) + "</span></div>" +
+        '<div class="summary-row total"><span>Total (inc. VAT)</span><span>' + money(summary.subtotal) + "</span></div>" +
       "</aside>" +
     "</div>";
 
   const form = document.getElementById("checkout-form");
   const addressFields = document.getElementById("address-fields");
 
+  const requiredAddressFields = ["address", "city", "postcode"];
+
   function updateDelivery() {
     const isDelivery = form.delivery.value === "Delivery";
     addressFields.hidden = !isDelivery;
-    addressFields.querySelectorAll("input, select").forEach(function (el) { el.required = isDelivery; });
+    requiredAddressFields.forEach(function (name) { form[name].required = isDelivery; });
+
+    // Paying on collection only makes sense when collecting
+    const collectionOption = document.getElementById("pay-on-collection");
+    collectionOption.hidden = isDelivery;
+    if (isDelivery && form.payment.value === "Pay on collection") {
+      form.querySelector('input[name="payment"][value="Bank transfer"]').checked = true;
+    }
   }
   form.querySelectorAll('input[name="delivery"]').forEach(function (radio) {
     radio.addEventListener("change", updateDelivery);
@@ -631,9 +654,12 @@ function renderCheckout() {
       phone: form.phone.value.trim(),
       email: form.email.value.trim(),
       company: form.company.value.trim(),
+      vatNumber: form.vatNumber.value.trim(),
       address: form.address.value.trim(),
+      address2: form.address2.value.trim(),
       city: form.city.value.trim(),
-      state: form.state.value
+      county: form.county.value.trim(),
+      postcode: form.postcode.value.trim().toUpperCase()
     };
     save("snok-customer", customer); // remember details for next time
 
@@ -696,8 +722,10 @@ function validateCheckout(form) {
     const value = input.value.trim();
     if (input.required && value === "") {
       message = "This is required";
-    } else if ((input.name === "phone" || input.name === "guarantorPhone") && !/^\+?[0-9]{10,14}$/.test(value.replace(/[\s-]/g, ""))) {
-      message = "Enter a valid phone number";
+    } else if (input.type === "tel" && value && !isValidPhone(value)) {
+      message = "Enter a valid phone number, e.g. 07700 900123";
+    } else if (input.name === "postcode" && value && !isValidPostcode(value)) {
+      message = "Enter a valid UK postcode, e.g. SW1A 1AA";
     } else if (input.type === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
       message = "Enter a valid email address";
     }
@@ -732,15 +760,15 @@ function orderText(order) {
       (item.wholesale ? " (wholesale)" : "") + " = " + money(item.total) + "\n";
   });
   if (order.savings > 0) text += "\nWholesale savings: " + money(order.savings);
-  text += "\n*Total: " + money(order.subtotal) + "* (plus delivery)\n\n";
+  text += "\n*Total: " + money(order.subtotal) + " inc. VAT* (plus delivery)\n\n";
   text += "Name: " + c.name + "\n";
-  if (c.company) text += "Business: " + c.company + "\n";
+  if (c.company) text += "Business: " + c.company + (c.vatNumber ? " (VAT " + c.vatNumber + ")" : "") + "\n";
   text += "Phone: " + c.phone + "\n";
   if (c.email) text += "Email: " + c.email + "\n";
   if (order.delivery === "Delivery") {
-    text += "Delivery to: " + c.address + ", " + c.city + ", " + c.state + "\n";
+    text += "Delivery to: " + formatAddress(c) + "\n";
   } else {
-    text += "I will pick up from the shop\n";
+    text += "I will collect the order\n";
   }
   text += "Payment: " + order.payment + "\n";
   if (order.plan) {
@@ -776,12 +804,13 @@ function renderOrder(id, params) {
       "</div>"
     : "";
 
-  const bankBox = order.payment !== "Pay on delivery / pickup"
+  const bankBox = order.payment !== "Pay on collection"
     ? '<div class="info-box">' +
         "<h3>Bank transfer details</h3>" +
         '<div class="bank-details">' +
           "<div><span>Bank</span><strong>" + esc(STORE.bank.bankName) + "</strong></div>" +
           "<div><span>Account name</span><strong>" + esc(STORE.bank.accountName) + "</strong></div>" +
+          "<div><span>Sort code</span><strong>" + esc(STORE.bank.sortCode) + "</strong></div>" +
           '<div><span>Account number</span><strong>' + esc(STORE.bank.accountNumber) +
             ' <button class="link-button" data-action="copy" data-text="' + esc(STORE.bank.accountNumber) + '">Copy</button></strong></div>' +
         "</div>" +
@@ -800,7 +829,7 @@ function renderOrder(id, params) {
           '<div class="info-box highlight"><h3>Last step: send your order to us</h3>' +
           "<p>Your order reaches us when you send it. Choose WhatsApp (fastest) or email:</p>"
         : "<h1>Order " + order.id + "</h1>" +
-          '<p class="lead">Placed on ' + new Date(order.date).toLocaleString("en-NG") + "</p>" +
+          '<p class="lead">Placed on ' + new Date(order.date).toLocaleString("en-GB") + "</p>" +
           '<div class="info-box"><h3>Send or resend this order</h3>') +
         '<div class="send-buttons">' +
           '<a class="btn btn-whatsapp btn-large" target="_blank" rel="noopener" href="' + whatsappLink(message) + '">Send on WhatsApp</a>' +
@@ -817,10 +846,10 @@ function renderOrder(id, params) {
             "</span><span>" + money(item.total) + "</span></div>";
         }).join("") +
         (order.savings > 0 ? '<div class="summary-row savings"><span>Wholesale savings</span><span>−' + money(order.savings) + "</span></div>" : "") +
-        '<div class="summary-row total"><span>Total (plus delivery)</span><span>' + money(order.subtotal) + "</span></div>" +
+        '<div class="summary-row total"><span>Total inc. VAT (plus delivery)</span><span>' + money(order.subtotal) + "</span></div>" +
         '<p class="muted">' + esc(order.delivery === "Delivery"
-          ? "Delivery to " + order.customer.address + ", " + order.customer.city + ", " + order.customer.state
-          : "Pickup from " + STORE.address) + " · Payment: " + esc(order.payment) + "</p>" +
+          ? "Delivery to " + formatAddress(order.customer)
+          : "Collect from " + STORE.address) + " · Payment: " + esc(order.payment) + "</p>" +
       "</div>" +
       '<p><a href="#/shop">← Continue shopping</a> · <a href="#/orders">See all my orders</a></p>' +
     "</div>";
@@ -838,7 +867,7 @@ function renderOrders() {
             const count = o.items.reduce(function (n, i) { return n + i.qty; }, 0);
             return '<a class="order-row" href="#/order/' + o.id + '">' +
               "<div><strong>" + o.id + "</strong><span class=\"muted\">" +
-                new Date(o.date).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" }) +
+                new Date(o.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) +
                 " · " + count + (count === 1 ? " item" : " items") + "</span></div>" +
               "<strong>" + money(o.subtotal) + "</strong></a>";
           }).join("") +
@@ -850,22 +879,27 @@ const APPLIANCES = [
   { name: "LED bulb", watts: 10, hours: 6 },
   { name: "Ceiling / standing fan", watts: 75, hours: 8 },
   { name: "Television (32–55\")", watts: 100, hours: 6 },
-  { name: "Decoder / Wi-Fi router", watts: 20, hours: 8 },
+  { name: "TV box / Wi-Fi router", watts: 20, hours: 12 },
   { name: "Phone charger", watts: 10, hours: 3 },
   { name: "Laptop", watts: 65, hours: 6 },
   { name: "Desktop computer", watts: 250, hours: 6 },
   { name: "Refrigerator", watts: 150, hours: 10 },
   { name: "Chest freezer", watts: 200, hours: 12 },
   { name: "Sound system", watts: 100, hours: 3 },
-  { name: "Air conditioner (1HP)", watts: 900, hours: 6 },
-  { name: "Air conditioner (1.5HP)", watts: 1300, hours: 6 },
+  { name: "Air conditioner (9,000 BTU, older type)", watts: 900, hours: 4 },
+  { name: "Air conditioner (12,000 BTU, older type)", watts: 1300, hours: 4 },
   { name: "Water pump (1HP)", watts: 750, hours: 1 },
   { name: "Microwave", watts: 1000, hours: 0.5 },
   { name: "Pressing iron", watts: 1000, hours: 0.5 },
-  { name: "Inverter AC (1HP)", watts: 550, hours: 6 },
-  { name: "Inverter AC (1.5HP)", watts: 800, hours: 6 },
+  { name: "Inverter AC / heat pump (9,000 BTU)", watts: 550, hours: 4 },
+  { name: "Inverter AC / heat pump (12,000 BTU)", watts: 800, hours: 4 },
   { name: "Inverter fridge / freezer", watts: 80, hours: 12 },
-  { name: "BLDC inverter ceiling fan", watts: 35, hours: 8 }
+  { name: "BLDC inverter ceiling fan", watts: 35, hours: 8 },
+  { name: "Kettle", watts: 3000, hours: 0.3 },
+  { name: "Washing machine", watts: 500, hours: 1 },
+  { name: "Dishwasher", watts: 1200, hours: 1 },
+  { name: "Tumble dryer", watts: 2500, hours: 1 },
+  { name: "Electric oven", watts: 2000, hours: 1 }
 ];
 
 // Pick batteries that match the inverter's voltage.
@@ -942,10 +976,10 @@ function renderCalculator() {
     // Rules of thumb:
     //  - inverter: total load + 25% headroom, at a 0.8 power factor
     //  - battery: covers evening & night use (about 60% of the day's use), at 80% usable depth
-    //  - panels: about 5 hours of good sun a day in Nigeria, 75% system efficiency
+    //  - panels: about 2.5 hours of full sun a day on average in the UK, 75% system efficiency
     const neededKva = (peakWatts * 1.25) / 0.8 / 1000;
     const neededKwh = (dailyWh * 0.6) / 0.8 / 1000;
-    const neededPanelWatts = dailyWh / (5 * 0.75);
+    const neededPanelWatts = dailyWh / (2.5 * 0.75);
 
     const recommendations = [];
 
@@ -991,7 +1025,7 @@ function renderCalculator() {
           Math.round(peakWatts) + "W and I use about " + (dailyWh / 1000).toFixed(1) +
           " kWh a day. Can you advise on a system and installation?") +
         '">Ask an expert on WhatsApp</a>' +
-      '<p class="muted small-print">This is an estimate. Cables, breakers, mounting and installation are extra. We\'ll confirm the right setup for you.</p>';
+      '<p class="muted small-print">This is an estimate based on average UK sunshine: panels produce much more in summer and much less in winter. Cables, breakers, mounting and installation are extra. We\'ll confirm the right setup for you.</p>';
 
     if (!recommendations.length) return;
     document.getElementById("add-recommended").addEventListener("click", function () {
@@ -1009,32 +1043,64 @@ function renderCalculator() {
 // ----- About & FAQ -----
 function renderAbout() {
   const faqs = [
+    ["Do your prices include VAT?",
+      "Yes. All prices include VAT at 20%. Business customers receive a VAT invoice. Add your business name and VAT number at checkout."],
     ["How do wholesale prices work?",
-      "Every product shows a minimum quantity for wholesale. Once you have that many of the same product in your cart, the lower wholesale price is applied automatically."],
+      "Every product shows a minimum quantity for wholesale. Once you have that many of the same product in your cart, the lower wholesale price is applied automatically, ideal for installers, electricians and resellers."],
     ["How do I pay?",
-      "You can pay by bank transfer or pay when you receive your goods. We confirm stock and delivery cost with you on WhatsApp or by phone before you pay."],
-    ["Do you deliver outside my city?",
-      "Yes, we deliver across Nigeria. Delivery cost depends on your location and the size of your order, and we confirm it before you pay. You can also pick up from our shop."],
+      "By bank transfer, by card or cash when you collect, or with an interest-free <a href=\"#/pay-later\">Buy Now, Pay Later</a> plan. We confirm stock and delivery cost with you before you pay."],
+    ["Where do you deliver?",
+      "We deliver across the UK mainland. Deliveries to the Scottish Highlands, islands, Northern Ireland, the Isle of Man and the Channel Islands may cost more. We confirm the cost before you pay. You can also collect from us."],
     ["Can I pay in instalments?",
-      'Yes. With <a href="#/pay-later">Buy Now, Pay Later</a> you can spread the cost over 3 to 12 months, weekly or monthly, for purchases from ' + money(STORE.payLater.minimumAmount) + "."],
+      'Yes. With <a href="#/pay-later">Buy Now, Pay Later</a> you can spread the cost over 3 to 12 months' +
+        (allPlansInterestFree() ? " at 0% interest" : "") + ", for purchases from " + money(STORE.payLater.minimumAmount) + ". Plans are subject to approval."],
     ["Do you install?",
-      "Yes. Tell us in the order notes or on WhatsApp that you need installation and we'll arrange it and give you a quote."],
+      "We can arrange installation through qualified installers. Solar PV and battery systems should be installed by an MCS-certified installer, which you need to earn money for exported electricity through the Smart Export Guarantee (SEG). Air conditioners and heat pumps must be fitted by an F-gas certified engineer, and all electrical work must follow UK wiring regulations (BS 7671)."],
+    ["Can I connect a system to the grid?",
+      "Yes. Grid-connected solar and battery systems must be notified to, or approved by, your local electricity network operator (under G98 or G99). Your installer normally handles this for you."],
     ["What size of system do I need?",
       'Try our <a href="#/calculator">Solar Calculator</a> for an estimate, then chat with us to confirm.'],
+    ["Can I return something?",
+      "If you order online, by phone or on WhatsApp, you can cancel within 14 days of receiving your goods under the Consumer Contracts Regulations, as long as the items are unused and in their original packaging. Faulty items are covered by your rights under the Consumer Rights Act 2015. Contact us to arrange a return."],
     ["Do products come with a warranty?",
-      "Warranty depends on the product and manufacturer. Ask us about any product and we'll give you the details."]
+      "Yes. Warranty length depends on the product and manufacturer, and is on top of your statutory rights. Ask us about any product and we'll give you the details."],
+    ["What happens to my personal details?",
+      "The details you type into this website are stored only in your own browser. They reach us only when you send your order or application to us by WhatsApp or email, and we use them only to process your order."]
   ];
   app.innerHTML =
     '<div class="page-head"><h1>About Snok Enterprise</h1></div>' +
     '<section class="about-grid">' +
       "<div>" +
-        "<p class=\"lead\">Snok Enterprise is a Nigerian supplier of solar and inverter technology for homes, offices, shops and installers.</p>" +
-        "<p>We sell solar panels, hybrid inverters, lithium and tubular batteries, charge controllers, solar lights and all the cables and accessories needed for a complete installation, at retail prices for individuals and wholesale prices for businesses, installers and resellers.</p>" +
-        "<p>Our goal is simple: reliable power that you can afford, with honest advice about what you actually need.</p>" +
+        '<p class="lead">Snok Enterprise supplies solar panels, battery storage, hybrid inverters and energy-efficient inverter appliances to homeowners and businesses across the United Kingdom.</p>' +
+        "<p>With energy prices high and more of us working from home, we help households and businesses generate their own electricity, store it for the evening, keep the lights on during power cuts and switch to appliances that use far less power.</p>" +
+        "<p>We sell everything for a complete system: solar panels, hybrid inverters, lithium batteries, charge controllers, cables and mounting kits, plus inverter heat pumps and air conditioners, fridges, freezers and other energy-saving appliances. Homeowners pay retail prices, and installers, electricians, resellers and businesses get wholesale prices automatically when they buy in quantity.</p>" +
+        "<p>Our goal is simple: lower bills and reliable power, with honest advice about what you actually need.</p>" +
       "</div>" +
       '<div class="about-card">' +
         "<h3>Visit or contact us</h3>" +
         contactDetails() +
+      "</div>" +
+    "</section>" +
+    '<section class="audience-grid">' +
+      '<div class="about-card">' +
+        "<h3>For homeowners</h3>" +
+        '<ul class="check-list">' +
+          "<li>Cut your electricity bills with solar panels</li>" +
+          "<li>Store daytime solar, or cheap off-peak electricity, in a battery for the evening</li>" +
+          "<li>Backup power for essentials during power cuts</li>" +
+          "<li>Efficient heating and cooling with inverter heat pumps</li>" +
+          "<li>Spread the cost with interest-free payment plans</li>" +
+        "</ul>" +
+      "</div>" +
+      '<div class="about-card">' +
+        "<h3>For businesses &amp; trade</h3>" +
+        '<ul class="check-list">' +
+          "<li>Wholesale prices applied automatically</li>" +
+          "<li>VAT invoices for every order</li>" +
+          "<li>Commercial inverters and large battery systems</li>" +
+          "<li>Bulk quotes for installers, electricians and resellers</li>" +
+          "<li>Business payment plans over 12 months</li>" +
+        "</ul>" +
       "</div>" +
     "</section>" +
     '<section class="section"><h2 class="section-title">Frequently asked questions</h2>' +
@@ -1125,9 +1191,9 @@ function renderPayLater(params) {
   app.innerHTML =
     '<section class="paylater-hero">' +
       '<span class="eyebrow">Buy now, pay later</span>' +
-      "<h1>Get it today. Pay small small.</h1>" +
-      "<p>Spread the cost of solar systems, inverters, batteries, inverter ACs, fridges and freezers over weekly or monthly payments, from " +
-        money(minimum) + ". No bank loan needed.</p>" +
+      "<h1>Get it today. Spread the cost.</h1>" +
+      "<p>Spread the cost of solar panels, battery storage, inverters, heat pumps, fridges and freezers over monthly payments" +
+        (allPlansInterestFree() ? ", <strong>0% interest and no fees</strong>" : "") + ", on purchases from " + money(minimum) + ".</p>" +
     "</section>" +
 
     '<section class="section">' +
@@ -1135,7 +1201,7 @@ function renderPayLater(params) {
       '<div class="steps">' +
         "<div><b>1</b><strong>Choose</strong><span>Pick a product or fill your cart, then choose a plan below.</span></div>" +
         "<div><b>2</b><strong>Apply</strong><span>Send your application on WhatsApp or by email. It takes 2 minutes.</span></div>" +
-        "<div><b>3</b><strong>Get approved</strong><span>We verify your ID, income and guarantor, usually within 24–48 hours.</span></div>" +
+        "<div><b>3</b><strong>Get approved</strong><span>We check your ID, address and that the payments are affordable for you, usually within 1–2 working days.</span></div>" +
         "<div><b>4</b><strong>Pay &amp; enjoy</strong><span>Pay your deposit, receive your goods, then pay the rest in instalments.</span></div>" +
       "</div>" +
     "</section>" +
@@ -1146,12 +1212,13 @@ function renderPayLater(params) {
         settings.plans.map(function (plan) {
           return '<div class="plan-card' + (plan.id === "6-months" ? " popular" : "") + '">' +
             (plan.id === "6-months" ? '<span class="plan-badge">Most popular</span>' : "") +
+            (plan.businessOnly ? '<span class="plan-badge business">Businesses</span>' : "") +
             "<h3>" + esc(plan.name) + "</h3>" +
             "<p>" + esc(plan.description) + "</p>" +
             "<ul>" +
               "<li><strong>" + Math.round(plan.deposit * 100) + "%</strong> deposit</li>" +
-              "<li><strong>" + plan.payments + "</strong> " + plan.every + "ly payments</li>" +
-              "<li>" + (plan.markup === 0 ? "<strong>No extra cost</strong>" : "<strong>+" + Math.round(plan.markup * 100) + "%</strong> on the price") + "</li>" +
+              "<li>then <strong>" + plan.payments + "</strong> " + plan.every + "ly payments</li>" +
+              "<li>" + (plan.markup === 0 ? "<strong>0% interest, no fees</strong>" : "<strong>+" + Math.round(plan.markup * 100) + "%</strong> on the price") + "</li>" +
               "<li>" + (plan.collectAfterPaying ? "Goods delivered when fully paid" : "Goods delivered after deposit") + "</li>" +
             "</ul>" +
           "</div>";
@@ -1168,7 +1235,7 @@ function renderPayLater(params) {
             productOptions +
             '<option value="custom">Enter an amount…</option>' +
           "</select></label>" +
-          '<label class="field" id="bnpl-amount-field"><span>Amount (₦)</span><input type="number" id="bnpl-amount" min="' + minimum + '" step="1000" placeholder="e.g. 1500000"></label>' +
+          '<label class="field" id="bnpl-amount-field"><span>Amount (£)</span><input type="number" id="bnpl-amount" min="' + minimum + '" step="10" placeholder="e.g. 2500"></label>' +
         "</div>" +
         '<div id="bnpl-results"></div>' +
       "</div>" +
@@ -1183,25 +1250,22 @@ function renderPayLater(params) {
           '<div class="form-grid">' +
             field("name", "Full name", "text", "", true) +
             field("phone", "Phone number", "tel", "", true) +
-            field("email", "Email (optional)", "email", "", false) +
-            '<label class="field"><span>State <b>*</b></span><select name="state" required><option value="">Choose your state</option>' +
-              NIGERIAN_STATES.map(function (s) { return "<option>" + s + "</option>"; }).join("") +
+            field("email", "Email", "email", "", true) +
+            field("postcode", "Postcode", "text", "", true, "e.g. SW1A 1AA") +
+            '<label class="field"><span>Applying as <b>*</b></span><select name="applicantType" required><option value="">Choose one</option>' +
+              "<option>Homeowner</option><option>Tenant</option><option>Business</option>" +
             '</select><em class="error"></em></label>' +
-            '<label class="field"><span>Work <b>*</b></span><select name="work" required><option value="">Choose one</option>' +
-              "<option>Employed (salary)</option><option>Self-employed / trader</option><option>Business owner</option><option>Civil servant</option><option>Other</option>" +
+            '<label class="field"><span>Employment <b>*</b></span><select name="work" required><option value="">Choose one</option>' +
+              "<option>Employed</option><option>Self-employed</option><option>Company director</option><option>Retired</option><option>Other</option>" +
             '</select><em class="error"></em></label>' +
             field("employer", "Employer or business name", "text", "", true) +
-            '<label class="field"><span>Monthly income <b>*</b></span><select name="income" required><option value="">Choose a range</option>' +
-              "<option>Below ₦150,000</option><option>₦150,000 – ₦300,000</option><option>₦300,000 – ₦600,000</option><option>₦600,000 – ₦1,000,000</option><option>Above ₦1,000,000</option>" +
+            '<label class="field"><span>Monthly take-home income <b>*</b></span><select name="income" required><option value="">Choose a range</option>' +
+              "<option>Below £1,500</option><option>£1,500 – £2,500</option><option>£2,500 – £4,000</option><option>£4,000 – £6,000</option><option>Above £6,000</option>" +
             '</select><em class="error"></em></label>' +
             '<label class="field"><span>ID you will provide <b>*</b></span><select name="idType" required><option value="">Choose one</option>' +
-              "<option>NIN slip / card</option><option>Driver's licence</option><option>Voter's card</option><option>International passport</option>" +
+              "<option>Passport</option><option>UK driving licence</option><option>UK residence permit / eVisa</option>" +
             '</select><em class="error"></em></label>' +
-          "</div>" +
-          "<h3>Guarantor</h3>" +
-          '<div class="form-grid">' +
-            field("guarantorName", "Guarantor's full name", "text", "", true) +
-            field("guarantorPhone", "Guarantor's phone", "tel", "", true) +
+            field("companyNumber", "Company number (businesses)", "text", "", false) +
           "</div>" +
           '<label class="field"><span>Anything else? (optional)</span><textarea name="notes" rows="3" placeholder="e.g. delivery address, installation needed"></textarea></label>' +
           '<div class="send-buttons">' +
@@ -1214,11 +1278,12 @@ function renderPayLater(params) {
           '<ul class="check-list">' + settings.requirements.map(function (r) { return "<li>" + esc(r) + "</li>"; }).join("") + "</ul>" +
           "<h3>Good to know</h3>" +
           '<ul class="check-list">' +
-            "<li>All plans are subject to approval.</li>" +
-            "<li>Prices on plans are based on retail prices.</li>" +
+            (allPlansInterestFree() ? "<li>0% interest and no fees on every plan.</li>" : "") +
+            "<li>All plans are subject to approval and an affordability check.</li>" +
+            "<li>Plans are based on retail prices, including VAT.</li>" +
             "<li>Goods remain the property of " + esc(STORE.name) + " until fully paid.</li>" +
-            "<li>Missed payments may attract a late fee; talk to us early if you have difficulty.</li>" +
             "<li>You can pay off early at any time.</li>" +
+            "<li>If you're finding it hard to pay, talk to us early. Free, impartial help is also available from MoneyHelper (moneyhelper.org.uk).</li>" +
           "</ul>" +
         "</div>" +
       "</div>" +
@@ -1256,7 +1321,8 @@ function renderPayLater(params) {
         settings.plans.map(function (plan) {
           const b = planBreakdown(plan, item.amount);
           return '<label class="plan-row">' +
-            '<span><input type="radio" name="bnpl-plan" value="' + plan.id + '"' + (plan.id === selectedPlanId ? " checked" : "") + "> <strong>" + esc(plan.name) + "</strong></span>" +
+            '<span><input type="radio" name="bnpl-plan" value="' + plan.id + '"' + (plan.id === selectedPlanId ? " checked" : "") + "> <strong>" + esc(plan.name) + "</strong>" +
+              (plan.businessOnly ? ' <span class="tag-wholesale">businesses</span>' : "") + "</span>" +
             '<span data-label="Pay today">' + money(b.deposit) + "</span>" +
             '<span data-label="Then">' + money(b.instalment) + " / " + plan.every + " × " + plan.payments + "</span>" +
             '<span data-label="Total">' + money(b.total) + "</span>" +
@@ -1305,6 +1371,11 @@ function renderPayLater(params) {
     if (!validateCheckout(form)) return;
 
     const plan = getPlan(selectedPlanId);
+    if (plan.businessOnly && form.applicantType.value !== "Business") {
+      toast(plan.name + " is for businesses. Choose another plan, or apply as a business.");
+      form.applicantType.focus();
+      return;
+    }
     const b = planBreakdown(plan, item.amount);
     const id = "BNPL-" + makeOrderId().slice(4);
     const text =
@@ -1316,12 +1387,13 @@ function renderPayLater(params) {
       "Total: " + money(b.total) + "\n\n" +
       "Name: " + form.name.value.trim() + "\n" +
       "Phone: " + form.phone.value.trim() + "\n" +
-      (form.email.value.trim() ? "Email: " + form.email.value.trim() + "\n" : "") +
-      "State: " + form.state.value + "\n" +
-      "Work: " + form.work.value + " (" + form.employer.value.trim() + ")\n" +
+      "Email: " + form.email.value.trim() + "\n" +
+      "Postcode: " + form.postcode.value.trim().toUpperCase() + "\n" +
+      "Applying as: " + form.applicantType.value + "\n" +
+      "Employment: " + form.work.value + " (" + form.employer.value.trim() + ")\n" +
+      (form.companyNumber.value.trim() ? "Company number: " + form.companyNumber.value.trim() + "\n" : "") +
       "Monthly income: " + form.income.value + "\n" +
       "ID: " + form.idType.value + "\n" +
-      "Guarantor: " + form.guarantorName.value.trim() + ", " + form.guarantorPhone.value.trim() + "\n" +
       (form.notes.value.trim() ? "Notes: " + form.notes.value.trim() + "\n" : "");
 
     const via = event.submitter ? event.submitter.dataset.via : "whatsapp";
@@ -1433,7 +1505,17 @@ function setupLayout() {
     whatsappLink("Hello " + STORE.name + ", I have a question.");
 
   // Show a reminder while the settings are still the examples
-  if (STORE.whatsapp === "2348000000000" || STORE.email === "orders@example.com") {
+  // Company details required on UK business websites, shown once filled in
+  const legal = [
+    STORE.legalName,
+    STORE.companyNumber ? "Company No. " + STORE.companyNumber : "",
+    STORE.vatNumber ? "VAT No. " + STORE.vatNumber : ""
+  ].filter(function (part) { return part; });
+  if (legal.length) {
+    document.getElementById("legal-line").textContent = " · " + legal.join(" · ");
+  }
+
+  if (STORE.whatsapp === "447700900000" || STORE.email === "orders@example.com") {
     document.getElementById("setup-banner").hidden = false;
   }
 }

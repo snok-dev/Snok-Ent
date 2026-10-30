@@ -511,6 +511,25 @@ main.container {
   color: var(--navy);
 }
 
+.vat {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.audience-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.plan-badge.business {
+  background: var(--navy);
+  right: auto;
+  left: 16px;
+}
+
 .card-wholesale {
   font-size: 0.83rem;
   color: var(--green);
@@ -1607,7 +1626,8 @@ main.container {
 
   .form-grid,
   .radio-group,
-  .about-grid {
+  .about-grid,
+  .audience-grid {
     grid-template-columns: 1fr;
   }
 

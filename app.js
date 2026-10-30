@@ -37,6 +37,38 @@ function unitPrice(product, qty) {
   return qty >= product.wholesaleMinQty ? product.wholesalePrice : product.retailPrice;
 }
 
+// ----- Buy now, pay later -----
+
+function getPlan(id) {
+  return STORE.payLater.plans.find(function (plan) { return plan.id === id; });
+}
+
+// Work out what a customer pays on a plan for a given price
+function planBreakdown(plan, price) {
+  const total = Math.round(price * (1 + plan.markup));
+  // Round instalments up to the nearest ₦100, then the deposit covers the rest exactly
+  const instalment = Math.ceil((total * (1 - plan.deposit)) / plan.payments / 100) * 100;
+  const deposit = total - instalment * plan.payments;
+  return { deposit: deposit, instalment: instalment, total: total, extra: total - price };
+}
+
+// e.g. "₦45,000 today, then ₦30,000 per month × 6"
+function planSentence(plan, price) {
+  const b = planBreakdown(plan, price);
+  return money(b.deposit) + " today, then " + money(b.instalment) + " per " + plan.every + " × " + plan.payments;
+}
+
+// The smallest monthly payment available, for "from ₦X/month" labels
+function lowestMonthly(price) {
+  let lowest = null;
+  STORE.payLater.plans.forEach(function (plan) {
+    if (plan.every !== "month" || plan.collectAfterPaying) return;
+    const instalment = planBreakdown(plan, price).instalment;
+    if (lowest === null || instalment < lowest) lowest = instalment;
+  });
+  return lowest;
+}
+
 function load(key, fallback) {
   try {
     const value = JSON.parse(localStorage.getItem(key));
@@ -88,6 +120,9 @@ const ART = {
   "charge-controllers": '<svg viewBox="0 0 120 100"><rect x="20" y="18" width="80" height="64" rx="8" fill="#1f2937"/><rect x="32" y="28" width="56" height="20" rx="3" fill="#bef264"/><text x="60" y="43" font-size="11" fill="#1f2937" text-anchor="middle" font-family="monospace">MPPT</text><g fill="#9ca3af"><rect x="30" y="60" width="12" height="12" rx="2"/><rect x="48" y="60" width="12" height="12" rx="2"/><rect x="66" y="60" width="12" height="12" rx="2"/></g></svg>',
   "solar-kits": '<svg viewBox="0 0 120 100"><circle cx="92" cy="22" r="11" fill="#f59e0b"/><rect x="10" y="40" width="58" height="36" rx="3" fill="#1e3a8a"/><g stroke="#93c5fd" stroke-width="1.2" opacity=".7"><path d="M29 40v36M48 40v36M10 58h58"/></g><rect x="76" y="46" width="30" height="40" rx="4" fill="#f1f5f9" stroke="#334155" stroke-width="2.5"/><rect x="82" y="52" width="18" height="9" rx="2" fill="#0f172a"/></svg>',
   "solar-lights": '<svg viewBox="0 0 120 100"><path d="M60 92 V36" stroke="#475569" stroke-width="5"/><rect x="32" y="14" width="56" height="14" rx="3" fill="#1e3a8a"/><path d="M60 36 h28 v8 h-28z" fill="#334155"/><path d="M70 44 L60 74 H100 L90 44 Z" fill="#fde047" opacity=".55"/></svg>',
+  "inverter-acs": '<svg viewBox="0 0 120 100"><rect x="12" y="20" width="96" height="36" rx="8" fill="#f8fafc" stroke="#334155" stroke-width="3"/><path d="M22 46h76" stroke="#94a3b8" stroke-width="3"/><circle cx="96" cy="31" r="3" fill="#22c55e"/><g stroke="#38bdf8" stroke-width="3" fill="none" stroke-linecap="round"><path d="M36 64 q-6 8 0 16"/><path d="M60 64 q-6 8 0 16"/><path d="M84 64 q-6 8 0 16"/></g></svg>',
+  "inverter-fridges": '<svg viewBox="0 0 120 100"><rect x="34" y="6" width="52" height="88" rx="6" fill="#f8fafc" stroke="#334155" stroke-width="3"/><path d="M34 38h52" stroke="#334155" stroke-width="3"/><path d="M76 16v14M76 46v18" stroke="#64748b" stroke-width="4" stroke-linecap="round"/><text x="52" y="84" font-size="9" fill="#0ea5e9" text-anchor="middle" font-family="sans-serif" font-weight="700">INV</text></svg>',
+  "home-appliances": '<svg viewBox="0 0 120 100"><rect x="26" y="8" width="68" height="84" rx="6" fill="#f8fafc" stroke="#334155" stroke-width="3"/><path d="M26 26h68" stroke="#334155" stroke-width="2.5"/><circle cx="38" cy="17" r="3" fill="#f59e0b"/><circle cx="60" cy="58" r="22" fill="#bae6fd" stroke="#334155" stroke-width="3"/><path d="M48 62 q12 -10 24 0" stroke="#0284c7" stroke-width="3" fill="none"/></svg>',
   "accessories": '<svg viewBox="0 0 120 100"><path d="M18 70 C40 20, 70 90, 100 34" fill="none" stroke="#dc2626" stroke-width="6" stroke-linecap="round"/><path d="M18 80 C44 40, 76 98, 102 50" fill="none" stroke="#111827" stroke-width="6" stroke-linecap="round"/><rect x="92" y="22" width="18" height="12" rx="3" fill="#475569"/></svg>'
 };
 
@@ -206,7 +241,7 @@ function renderHome() {
     '<section class="benefits">' +
       '<div><strong>Retail &amp; wholesale</strong><span>Bulk prices apply automatically</span></div>' +
       '<div><strong>Delivery across Nigeria</strong><span>Or pick up from our shop</span></div>' +
-      '<div><strong>Flexible payment</strong><span>Bank transfer or pay on delivery</span></div>' +
+      '<a href="#/pay-later"><strong>Buy now, pay later</strong><span>Spread payments over up to 12 months</span></a>' +
       '<div><strong>Expert advice</strong><span>Chat with us on WhatsApp</span></div>' +
     "</section>" +
 
@@ -232,6 +267,14 @@ function renderHome() {
       "<p>Installers, resellers and contractors pay wholesale prices once they reach the minimum quantity shown on each product. Need a bigger quote? Message us.</p></div>" +
       '<a class="btn btn-whatsapp btn-large" target="_blank" rel="noopener" href="' +
         whatsappLink("Hello " + STORE.name + ", I'd like a wholesale quote.") + '">Get a wholesale quote</a>' +
+    "</section>" +
+
+    '<section class="paylater-banner">' +
+      "<div><span class=\"eyebrow\">Buy now, pay later</span>" +
+      "<h2>Get it today. Pay small small.</h2>" +
+      "<p>Solar systems, inverter ACs, fridges and more on " + STORE.payLater.plans.length +
+        " flexible plans: weekly or monthly, from 3 to 12 months.</p></div>" +
+      '<a href="#/pay-later" class="btn btn-primary btn-large">See payment plans</a>' +
     "</section>";
 }
 
@@ -355,6 +398,10 @@ function renderProduct(id) {
             "</div>" +
             '<p id="price-preview" class="price-preview"></p>'
           : "") +
+        (product.retailPrice >= STORE.payLater.minimumAmount && product.inStock
+          ? '<a class="paylater-line" href="#/pay-later?product=' + product.id + '">' +
+              "<span>Or pay from <strong>" + money(lowestMonthly(product.retailPrice)) + "/month</strong> with Buy Now, Pay Later</span><span>See plans →</span></a>"
+          : "") +
         '<a class="btn btn-whatsapp" id="ask-whatsapp" target="_blank" rel="noopener">Ask about this product on WhatsApp</a>' +
         (specsRows ? '<h3>Specifications</h3><table class="specs">' + specsRows + "</table>" : "") +
       "</div>" +
@@ -463,6 +510,10 @@ function renderCart() {
         '<div class="summary-row"><span>Delivery</span><span class="muted">Confirmed after order</span></div>' +
         '<div class="summary-row total"><span>Total</span><span>' + money(summary.subtotal) + "</span></div>" +
         '<a href="#/checkout" class="btn btn-primary btn-block btn-large">Proceed to checkout</a>' +
+        (summary.subtotal >= STORE.payLater.minimumAmount
+          ? '<a href="#/pay-later?cart=1" class="paylater-line small"><span>Or pay from <strong>' +
+              money(lowestMonthly(summary.subtotal)) + "/month</strong></span><span>See plans →</span></a>"
+          : "") +
         '<a href="#/shop" class="btn btn-light btn-block">Continue shopping</a>' +
       "</aside>" +
     "</div>";
@@ -517,6 +568,21 @@ function renderCheckout() {
         '<div class="radio-group">' +
           '<label class="radio-card"><input type="radio" name="payment" value="Bank transfer" checked><span><strong>Bank transfer</strong><small>Account details shown after you place the order</small></span></label>' +
           '<label class="radio-card"><input type="radio" name="payment" value="Pay on delivery / pickup"><span><strong>Pay on delivery or pickup</strong><small>Cash, transfer or POS when you receive your goods</small></span></label>' +
+          (summary.subtotal >= STORE.payLater.minimumAmount
+            ? '<label class="radio-card"><input type="radio" name="payment" value="Buy now, pay later"><span><strong>Buy now, pay later</strong><small>From ' +
+                money(lowestMonthly(summary.subtotal)) + "/month. Subject to approval</small></span></label>"
+            : "") +
+        "</div>" +
+        '<div id="plan-picker" class="plan-picker" hidden>' +
+          "<strong>Choose your plan</strong>" +
+          STORE.payLater.plans.map(function (plan, i) {
+            const b = planBreakdown(plan, summary.subtotal);
+            return '<label class="plan-option"><input type="radio" name="plan" value="' + plan.id + '"' + (i === 3 ? " checked" : "") + ">" +
+              "<span><strong>" + esc(plan.name) + "</strong>" +
+              "<small>" + planSentence(plan, summary.subtotal) + "</small></span>" +
+              "<span class=\"plan-total\">" + money(b.total) + "</span></label>";
+          }).join("") +
+          '<p class="muted small-print">You\'ll need: ' + STORE.payLater.requirements.map(esc).join("; ") + '. <a href="#/pay-later">Learn more</a></p>' +
         "</div>" +
 
         '<label class="field"><span>Notes (optional)</span><textarea name="notes" rows="3" placeholder="Anything we should know? e.g. installation needed, best time to call"></textarea></label>' +
@@ -548,6 +614,14 @@ function renderCheckout() {
   });
   updateDelivery();
 
+  // Show the plans only when "Buy now, pay later" is chosen
+  const planPicker = document.getElementById("plan-picker");
+  form.querySelectorAll('input[name="payment"]').forEach(function (radio) {
+    radio.addEventListener("change", function () {
+      planPicker.hidden = form.payment.value !== "Buy now, pay later";
+    });
+  });
+
   form.addEventListener("submit", function (event) {
     event.preventDefault();
     if (!validateCheckout(form)) return;
@@ -574,8 +648,23 @@ function renderCheckout() {
       customer: customer,
       delivery: form.delivery.value,
       payment: form.payment.value,
+      plan: null,
       notes: form.notes.value.trim()
     };
+
+    if (order.payment === "Buy now, pay later") {
+      const plan = getPlan(form.plan.value);
+      const b = planBreakdown(plan, summary.subtotal);
+      order.plan = {
+        name: plan.name,
+        deposit: b.deposit,
+        instalment: b.instalment,
+        payments: plan.payments,
+        every: plan.every,
+        total: b.total,
+        collectAfterPaying: !!plan.collectAfterPaying
+      };
+    }
 
     const orders = load("snok-orders", []);
     orders.unshift(order);
@@ -607,7 +696,7 @@ function validateCheckout(form) {
     const value = input.value.trim();
     if (input.required && value === "") {
       message = "This is required";
-    } else if (input.name === "phone" && !/^\+?[0-9]{10,14}$/.test(value.replace(/[\s-]/g, ""))) {
+    } else if ((input.name === "phone" || input.name === "guarantorPhone") && !/^\+?[0-9]{10,14}$/.test(value.replace(/[\s-]/g, ""))) {
       message = "Enter a valid phone number";
     } else if (input.type === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
       message = "Enter a valid email address";
@@ -654,6 +743,11 @@ function orderText(order) {
     text += "I will pick up from the shop\n";
   }
   text += "Payment: " + order.payment + "\n";
+  if (order.plan) {
+    const pl = order.plan;
+    text += "Plan: " + pl.name + ": " + money(pl.deposit) + " deposit, then " + money(pl.instalment) +
+      " per " + pl.every + " × " + pl.payments + " (total " + money(pl.total) + ")\n";
+  }
   if (order.notes) text += "Notes: " + order.notes + "\n";
   return text;
 }
@@ -665,7 +759,24 @@ function renderOrder(id, params) {
   const isNew = params.get("new") === "1";
   const message = orderText(order);
 
-  const bankBox = order.payment === "Bank transfer"
+  const plan = order.plan;
+  const planBox = plan
+    ? '<div class="info-box">' +
+        "<h3>Your pay-later plan: " + esc(plan.name) + "</h3>" +
+        '<div class="bank-details">' +
+          "<div><span>Deposit (after approval)</span><strong>" + money(plan.deposit) + "</strong></div>" +
+          "<div><span>Then</span><strong>" + money(plan.instalment) + " per " + plan.every + " × " + plan.payments + "</strong></div>" +
+          "<div><span>Total you'll pay</span><strong>" + money(plan.total) + "</strong></div>" +
+        "</div>" +
+        "<p>" + (plan.collectAfterPaying
+          ? "Your goods are delivered once you have paid in full."
+          : "Your goods are delivered after your deposit is paid.") +
+        " We'll contact you to verify your details. Please have these ready:</p>" +
+        "<ul>" + STORE.payLater.requirements.map(function (r) { return "<li>" + esc(r) + "</li>"; }).join("") + "</ul>" +
+      "</div>"
+    : "";
+
+  const bankBox = order.payment !== "Pay on delivery / pickup"
     ? '<div class="info-box">' +
         "<h3>Bank transfer details</h3>" +
         '<div class="bank-details">' +
@@ -674,7 +785,10 @@ function renderOrder(id, params) {
           '<div><span>Account number</span><strong>' + esc(STORE.bank.accountNumber) +
             ' <button class="link-button" data-action="copy" data-text="' + esc(STORE.bank.accountNumber) + '">Copy</button></strong></div>' +
         "</div>" +
-        '<p class="muted">Please wait for us to confirm stock and the delivery cost before paying. Use <strong>' + order.id + "</strong> as the payment reference.</p>" +
+        '<p class="muted">' + (plan
+          ? "Please wait until your application is approved before paying your deposit."
+          : "Please wait for us to confirm stock and the delivery cost before paying.") +
+          " Use <strong>" + order.id + "</strong> as the payment reference.</p>" +
       "</div>"
     : "";
 
@@ -693,6 +807,7 @@ function renderOrder(id, params) {
           '<a class="btn btn-light btn-large" href="' + emailLink("New order " + order.id, message.replace(/\*/g, "")) + '">Send by email</a>' +
         "</div>" +
       "</div>" +
+      planBox +
       bankBox +
       '<div class="info-box">' +
         "<h3>Order summary</h3>" +
@@ -746,7 +861,11 @@ const APPLIANCES = [
   { name: "Air conditioner (1.5HP)", watts: 1300, hours: 6 },
   { name: "Water pump (1HP)", watts: 750, hours: 1 },
   { name: "Microwave", watts: 1000, hours: 0.5 },
-  { name: "Pressing iron", watts: 1000, hours: 0.5 }
+  { name: "Pressing iron", watts: 1000, hours: 0.5 },
+  { name: "Inverter AC (1HP)", watts: 550, hours: 6 },
+  { name: "Inverter AC (1.5HP)", watts: 800, hours: 6 },
+  { name: "Inverter fridge / freezer", watts: 80, hours: 12 },
+  { name: "BLDC inverter ceiling fan", watts: 35, hours: 8 }
 ];
 
 // Pick batteries that match the inverter's voltage.
@@ -896,6 +1015,8 @@ function renderAbout() {
       "You can pay by bank transfer or pay when you receive your goods. We confirm stock and delivery cost with you on WhatsApp or by phone before you pay."],
     ["Do you deliver outside my city?",
       "Yes, we deliver across Nigeria. Delivery cost depends on your location and the size of your order, and we confirm it before you pay. You can also pick up from our shop."],
+    ["Can I pay in instalments?",
+      'Yes. With <a href="#/pay-later">Buy Now, Pay Later</a> you can spread the cost over 3 to 12 months, weekly or monthly, for purchases from ' + money(STORE.payLater.minimumAmount) + "."],
     ["Do you install?",
       "Yes. Tell us in the order notes or on WhatsApp that you need installation and we'll arrange it and give you a quote."],
     ["What size of system do I need?",
@@ -967,6 +1088,252 @@ function renderContact() {
   });
 }
 
+// ----- Buy now, pay later -----
+function renderPayLater(params) {
+  const settings = STORE.payLater;
+  const minimum = settings.minimumAmount;
+  const summary = cartSummary();
+
+  // Things the customer can choose to pay for: their cart, one product, or an amount
+  const choices = {};
+  if (summary.subtotal >= minimum) {
+    choices.cart = {
+      amount: summary.subtotal,
+      label: "Everything in my cart",
+      items: summary.lines.map(function (l) { return l.qty + " × " + l.product.name; }).join(", ")
+    };
+  }
+  PRODUCTS.forEach(function (p) {
+    if (p.inStock && p.retailPrice >= minimum) {
+      choices["product:" + p.id] = { amount: p.retailPrice, label: p.name, items: "1 × " + p.name };
+    }
+  });
+
+  let initialChoice = "custom";
+  if (params.get("cart") && choices.cart) initialChoice = "cart";
+  else if (params.get("product") && choices["product:" + params.get("product")]) initialChoice = "product:" + params.get("product");
+  else if (choices.cart) initialChoice = "cart";
+
+  const productOptions = CATEGORIES.map(function (c) {
+    const options = PRODUCTS.filter(function (p) { return p.category === c.id && choices["product:" + p.id]; })
+      .map(function (p) {
+        return '<option value="product:' + p.id + '">' + esc(p.name) + " (" + money(p.retailPrice) + ")</option>";
+      }).join("");
+    return options ? '<optgroup label="' + esc(c.name) + '">' + options + "</optgroup>" : "";
+  }).join("");
+
+  app.innerHTML =
+    '<section class="paylater-hero">' +
+      '<span class="eyebrow">Buy now, pay later</span>' +
+      "<h1>Get it today. Pay small small.</h1>" +
+      "<p>Spread the cost of solar systems, inverters, batteries, inverter ACs, fridges and freezers over weekly or monthly payments, from " +
+        money(minimum) + ". No bank loan needed.</p>" +
+    "</section>" +
+
+    '<section class="section">' +
+      '<h2 class="section-title">How it works</h2>' +
+      '<div class="steps">' +
+        "<div><b>1</b><strong>Choose</strong><span>Pick a product or fill your cart, then choose a plan below.</span></div>" +
+        "<div><b>2</b><strong>Apply</strong><span>Send your application on WhatsApp or by email. It takes 2 minutes.</span></div>" +
+        "<div><b>3</b><strong>Get approved</strong><span>We verify your ID, income and guarantor, usually within 24–48 hours.</span></div>" +
+        "<div><b>4</b><strong>Pay &amp; enjoy</strong><span>Pay your deposit, receive your goods, then pay the rest in instalments.</span></div>" +
+      "</div>" +
+    "</section>" +
+
+    '<section class="section">' +
+      '<h2 class="section-title">Our plans</h2>' +
+      '<div class="plan-grid">' +
+        settings.plans.map(function (plan) {
+          return '<div class="plan-card' + (plan.id === "6-months" ? " popular" : "") + '">' +
+            (plan.id === "6-months" ? '<span class="plan-badge">Most popular</span>' : "") +
+            "<h3>" + esc(plan.name) + "</h3>" +
+            "<p>" + esc(plan.description) + "</p>" +
+            "<ul>" +
+              "<li><strong>" + Math.round(plan.deposit * 100) + "%</strong> deposit</li>" +
+              "<li><strong>" + plan.payments + "</strong> " + plan.every + "ly payments</li>" +
+              "<li>" + (plan.markup === 0 ? "<strong>No extra cost</strong>" : "<strong>+" + Math.round(plan.markup * 100) + "%</strong> on the price") + "</li>" +
+              "<li>" + (plan.collectAfterPaying ? "Goods delivered when fully paid" : "Goods delivered after deposit") + "</li>" +
+            "</ul>" +
+          "</div>";
+        }).join("") +
+      "</div>" +
+    "</section>" +
+
+    '<section class="section" id="plan-calculator">' +
+      '<h2 class="section-title">Work out your payments</h2>' +
+      '<div class="paylater-calc">' +
+        '<div class="form-grid">' +
+          '<label class="field"><span>What do you want to buy?</span><select id="bnpl-choice">' +
+            (choices.cart ? '<option value="cart">My cart (' + money(choices.cart.amount) + ")</option>" : "") +
+            productOptions +
+            '<option value="custom">Enter an amount…</option>' +
+          "</select></label>" +
+          '<label class="field" id="bnpl-amount-field"><span>Amount (₦)</span><input type="number" id="bnpl-amount" min="' + minimum + '" step="1000" placeholder="e.g. 1500000"></label>' +
+        "</div>" +
+        '<div id="bnpl-results"></div>' +
+      "</div>" +
+    "</section>" +
+
+    '<section class="section" id="apply">' +
+      '<h2 class="section-title">Apply now</h2>' +
+      '<div class="about-grid">' +
+        '<form id="bnpl-form" class="checkout-form" novalidate>' +
+          '<p id="bnpl-selected" class="selected-plan"></p>' +
+          "<h3>Your details</h3>" +
+          '<div class="form-grid">' +
+            field("name", "Full name", "text", "", true) +
+            field("phone", "Phone number", "tel", "", true) +
+            field("email", "Email (optional)", "email", "", false) +
+            '<label class="field"><span>State <b>*</b></span><select name="state" required><option value="">Choose your state</option>' +
+              NIGERIAN_STATES.map(function (s) { return "<option>" + s + "</option>"; }).join("") +
+            '</select><em class="error"></em></label>' +
+            '<label class="field"><span>Work <b>*</b></span><select name="work" required><option value="">Choose one</option>' +
+              "<option>Employed (salary)</option><option>Self-employed / trader</option><option>Business owner</option><option>Civil servant</option><option>Other</option>" +
+            '</select><em class="error"></em></label>' +
+            field("employer", "Employer or business name", "text", "", true) +
+            '<label class="field"><span>Monthly income <b>*</b></span><select name="income" required><option value="">Choose a range</option>' +
+              "<option>Below ₦150,000</option><option>₦150,000 – ₦300,000</option><option>₦300,000 – ₦600,000</option><option>₦600,000 – ₦1,000,000</option><option>Above ₦1,000,000</option>" +
+            '</select><em class="error"></em></label>' +
+            '<label class="field"><span>ID you will provide <b>*</b></span><select name="idType" required><option value="">Choose one</option>' +
+              "<option>NIN slip / card</option><option>Driver's licence</option><option>Voter's card</option><option>International passport</option>" +
+            '</select><em class="error"></em></label>' +
+          "</div>" +
+          "<h3>Guarantor</h3>" +
+          '<div class="form-grid">' +
+            field("guarantorName", "Guarantor's full name", "text", "", true) +
+            field("guarantorPhone", "Guarantor's phone", "tel", "", true) +
+          "</div>" +
+          '<label class="field"><span>Anything else? (optional)</span><textarea name="notes" rows="3" placeholder="e.g. delivery address, installation needed"></textarea></label>' +
+          '<div class="send-buttons">' +
+            '<button type="submit" class="btn btn-whatsapp btn-large" data-via="whatsapp">Apply on WhatsApp</button>' +
+            '<button type="submit" class="btn btn-light btn-large" data-via="email">Apply by email</button>' +
+          "</div>" +
+        "</form>" +
+        '<div class="about-card">' +
+          "<h3>What you'll need</h3>" +
+          '<ul class="check-list">' + settings.requirements.map(function (r) { return "<li>" + esc(r) + "</li>"; }).join("") + "</ul>" +
+          "<h3>Good to know</h3>" +
+          '<ul class="check-list">' +
+            "<li>All plans are subject to approval.</li>" +
+            "<li>Prices on plans are based on retail prices.</li>" +
+            "<li>Goods remain the property of " + esc(STORE.name) + " until fully paid.</li>" +
+            "<li>Missed payments may attract a late fee; talk to us early if you have difficulty.</li>" +
+            "<li>You can pay off early at any time.</li>" +
+          "</ul>" +
+        "</div>" +
+      "</div>" +
+    "</section>";
+
+  const choiceSelect = document.getElementById("bnpl-choice");
+  const amountField = document.getElementById("bnpl-amount-field");
+  const amountInput = document.getElementById("bnpl-amount");
+  const results = document.getElementById("bnpl-results");
+  const selectedText = document.getElementById("bnpl-selected");
+  choiceSelect.value = initialChoice;
+  let selectedPlanId = "6-months";
+
+  function current() {
+    if (choiceSelect.value === "custom") {
+      const amount = Math.round(parseFloat(amountInput.value) || 0);
+      return { amount: amount, label: "Custom amount", items: "Amount: " + money(amount) };
+    }
+    return choices[choiceSelect.value];
+  }
+
+  function update() {
+    amountField.hidden = choiceSelect.value !== "custom";
+    const item = current();
+
+    if (item.amount < minimum) {
+      results.innerHTML = '<p class="muted">Buy now, pay later is available for purchases from ' + money(minimum) + ".</p>";
+      selectedText.innerHTML = "Choose what you want to buy in the calculator above.";
+      return;
+    }
+
+    results.innerHTML =
+      '<div class="plan-table">' +
+        '<div class="plan-row plan-head"><span>Plan</span><span>Pay today</span><span>Then</span><span>Total</span><span>Extra</span></div>' +
+        settings.plans.map(function (plan) {
+          const b = planBreakdown(plan, item.amount);
+          return '<label class="plan-row">' +
+            '<span><input type="radio" name="bnpl-plan" value="' + plan.id + '"' + (plan.id === selectedPlanId ? " checked" : "") + "> <strong>" + esc(plan.name) + "</strong></span>" +
+            '<span data-label="Pay today">' + money(b.deposit) + "</span>" +
+            '<span data-label="Then">' + money(b.instalment) + " / " + plan.every + " × " + plan.payments + "</span>" +
+            '<span data-label="Total">' + money(b.total) + "</span>" +
+            '<span data-label="Extra" class="muted">' + (b.extra === 0 ? "None" : money(b.extra)) + "</span>" +
+          "</label>";
+        }).join("") +
+      "</div>";
+
+    results.querySelectorAll('input[name="bnpl-plan"]').forEach(function (radio) {
+      radio.addEventListener("change", function () {
+        selectedPlanId = radio.value;
+        showSelected();
+      });
+    });
+    showSelected();
+  }
+
+  function showSelected() {
+    const item = current();
+    const plan = getPlan(selectedPlanId);
+    selectedText.innerHTML = "Applying for: <strong>" + esc(item.label) + "</strong> (" + money(item.amount) + ") on the <strong>" +
+      esc(plan.name) + "</strong> plan: " + planSentence(plan, item.amount) + '. <a href="#plan-calculator" data-scroll>Change</a>';
+  }
+
+  choiceSelect.addEventListener("change", update);
+  amountInput.addEventListener("input", update);
+  update();
+
+  // "Change" link scrolls back up to the calculator
+  selectedText.addEventListener("click", function (event) {
+    if (event.target.matches("[data-scroll]")) {
+      event.preventDefault();
+      document.getElementById("plan-calculator").scrollIntoView();
+    }
+  });
+
+  const form = document.getElementById("bnpl-form");
+  form.addEventListener("submit", function (event) {
+    event.preventDefault();
+    const item = current();
+    if (item.amount < minimum) {
+      toast("Choose something from " + money(minimum) + " in the calculator first");
+      document.getElementById("plan-calculator").scrollIntoView();
+      return;
+    }
+    if (!validateCheckout(form)) return;
+
+    const plan = getPlan(selectedPlanId);
+    const b = planBreakdown(plan, item.amount);
+    const id = "BNPL-" + makeOrderId().slice(4);
+    const text =
+      "Hello " + STORE.name + ", I'd like to apply for Buy Now, Pay Later.\n\n" +
+      "*Application " + id + "*\n" +
+      "Item: " + item.items + "\n" +
+      "Price: " + money(item.amount) + "\n" +
+      "Plan: " + plan.name + ": " + money(b.deposit) + " deposit, then " + money(b.instalment) + " per " + plan.every + " × " + plan.payments + "\n" +
+      "Total: " + money(b.total) + "\n\n" +
+      "Name: " + form.name.value.trim() + "\n" +
+      "Phone: " + form.phone.value.trim() + "\n" +
+      (form.email.value.trim() ? "Email: " + form.email.value.trim() + "\n" : "") +
+      "State: " + form.state.value + "\n" +
+      "Work: " + form.work.value + " (" + form.employer.value.trim() + ")\n" +
+      "Monthly income: " + form.income.value + "\n" +
+      "ID: " + form.idType.value + "\n" +
+      "Guarantor: " + form.guarantorName.value.trim() + ", " + form.guarantorPhone.value.trim() + "\n" +
+      (form.notes.value.trim() ? "Notes: " + form.notes.value.trim() + "\n" : "");
+
+    const via = event.submitter ? event.submitter.dataset.via : "whatsapp";
+    if (via === "email") {
+      location.href = emailLink("Pay later application " + id, text.replace(/\*/g, ""));
+    } else {
+      window.open(whatsappLink(text), "_blank", "noopener");
+    }
+    toast("Application " + id + " ready to send");
+  });
+}
+
 function renderNotFound() {
   app.innerHTML =
     '<div class="empty-state big"><h1>Page not found</h1><p>We couldn\'t find what you were looking for.</p>' +
@@ -996,6 +1363,7 @@ function route() {
   else if (page === "calculator") renderCalculator();
   else if (page === "about") renderAbout();
   else if (page === "contact") renderContact();
+  else if (page === "pay-later") renderPayLater(params);
   else renderNotFound();
 
   document.querySelectorAll("[data-nav]").forEach(function (link) {

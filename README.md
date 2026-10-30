@@ -1,6 +1,6 @@
 # Snok Enterprise – Online Store
 
-An online store for solar and inverter technology: solar panels, inverters, batteries, charge controllers, complete solar kits, solar lights, and cables and accessories, at **retail and wholesale prices**.
+An online store for solar and inverter technology: solar panels, inverters, batteries, charge controllers, complete solar kits, solar lights, cables and accessories, **inverter air conditioners, inverter fridges and freezers, and energy-saving appliances**, at **retail and wholesale prices**, with **Buy Now, Pay Later** plans.
 
 It's a static website with no server, database or paid service. It can be hosted for free on GitHub Pages.
 
@@ -12,6 +12,7 @@ It's a static website with no server, database or paid service. It can be hosted
 - **Checkout**: delivery (all 36 states + FCT) or shop pickup; bank transfer or pay on delivery
 - **Orders sent to you on WhatsApp or by email**: the customer sends a neatly formatted order with an order number (e.g. `SNK-261030-4955`). Bank details are shown for transfers
 - **My Orders**: customers can see and resend their past orders
+- **Buy Now, Pay Later** (`#/pay-later`): six instalment plans (Save & Collect, 12 weeks, and 3, 6, 9 or 12 months). Customers see the deposit and each payment for any product, their cart or any amount, then apply on WhatsApp or by email with their ID, income and guarantor details. Pay later can also be chosen at checkout, and product pages show "from ₦X/month"
 - **Solar Calculator**: customers enter their appliances and get a recommended inverter, matching batteries and solar panels, with an "Add all to cart" button
 - **About & FAQ**, **Contact** form (via WhatsApp or email), and a floating WhatsApp chat button
 - Works on phones, tablets and computers
@@ -30,7 +31,10 @@ To add a product, copy an existing `{ ... },` block, paste it below, and change 
 
 You can edit these files directly on GitHub: open the file, click the ✏️ pencil icon, make your changes, then click **Commit changes**. The live site updates within a minute or two.
 
-### 3. After changing files
+### 3. Your pay-later plans – `config.js`
+The plans, deposits, extra charges (markup), minimum amount and requirements are in the `payLater` section of `config.js`. **The terms included are samples. Set your own.** You can add, remove or change plans there.
+
+### 4. After changing files
 To make sure customers' browsers load your latest version, open `index.html` and increase the `?v=1` numbers (e.g. to `?v=2`).
 
 ## Putting it online (free)

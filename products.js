@@ -18,7 +18,10 @@ const CATEGORIES = [
   { id: "charge-controllers", name: "Charge Controllers" },
   { id: "solar-kits", name: "Complete Solar Kits" },
   { id: "solar-lights", name: "Solar Lights" },
-  { id: "accessories", name: "Cables & Accessories" }
+  { id: "accessories", name: "Cables & Accessories" },
+  { id: "inverter-acs", name: "Inverter Air Conditioners" },
+  { id: "inverter-fridges", name: "Inverter Fridges & Freezers" },
+  { id: "home-appliances", name: "Energy-Saving Appliances" }
 ];
 
 const PRODUCTS = [
@@ -407,5 +410,203 @@ const PRODUCTS = [
     featured: false,
     description: "Aluminium rails, clamps and hooks to fix up to 4 panels on a roof.",
     specs: { "Fits": "Up to 4 panels", "Material": "Anodised aluminium" }
+  },
+
+  // ----- Inverter air conditioners -----
+  {
+    id: "ac-1hp-inverter",
+    name: "1HP Inverter Split Air Conditioner",
+    category: "inverter-acs",
+    retailPrice: 520000,
+    wholesalePrice: 485000,
+    wholesaleMinQty: 3,
+    inStock: true,
+    featured: false,
+    description: "Inverter compressor adjusts its speed instead of switching on and off, using up to 60% less power than a regular AC. Comfortable on a 3.5kVA solar system.",
+    specs: { "Cooling": "9,000 BTU", "Power use": "About 300 – 800W", "Refrigerant": "R32 (eco-friendly)", "Works with": "2.5kVA inverter and above", "Includes": "Installation kit (pipes extra)" }
+  },
+  {
+    id: "ac-1-5hp-inverter",
+    name: "1.5HP Inverter Split Air Conditioner",
+    category: "inverter-acs",
+    retailPrice: 680000,
+    wholesalePrice: 635000,
+    wholesaleMinQty: 3,
+    inStock: true,
+    featured: true,
+    description: "Fast cooling for medium rooms with low running cost. Gentle start-up means no power surge on your inverter.",
+    specs: { "Cooling": "12,000 BTU", "Power use": "About 400 – 1,100W", "Refrigerant": "R32 (eco-friendly)", "Works with": "3.5kVA inverter and above", "Modes": "Cool, Dry, Fan, Sleep, Turbo" }
+  },
+  {
+    id: "ac-2hp-inverter",
+    name: "2HP Inverter Split Air Conditioner",
+    category: "inverter-acs",
+    retailPrice: 890000,
+    wholesalePrice: 830000,
+    wholesaleMinQty: 3,
+    inStock: true,
+    featured: false,
+    description: "Powerful inverter AC for living rooms, offices and shops.",
+    specs: { "Cooling": "18,000 BTU", "Power use": "About 600 – 1,600W", "Refrigerant": "R32 (eco-friendly)", "Works with": "5kVA inverter and above" }
+  },
+  {
+    id: "ac-1-5hp-solar-hybrid",
+    name: "1.5HP Solar Hybrid DC/AC Air Conditioner",
+    category: "inverter-acs",
+    retailPrice: 1350000,
+    wholesalePrice: 1260000,
+    wholesaleMinQty: 2,
+    inStock: true,
+    featured: false,
+    description: "Runs directly from solar panels during the day and switches to your inverter or grid at night, cutting battery use.",
+    specs: { "Cooling": "12,000 BTU", "Power sources": "Solar panels (DC) + grid/inverter (AC)", "Panels needed": "3 – 4 × 550W", "Compressor": "DC inverter" }
+  },
+
+  // ----- Inverter fridges & freezers -----
+  {
+    id: "fridge-200l-inverter",
+    name: "200L Inverter Double-Door Refrigerator",
+    category: "inverter-fridges",
+    retailPrice: 420000,
+    wholesalePrice: 390000,
+    wholesaleMinQty: 3,
+    inStock: true,
+    featured: false,
+    description: "Inverter compressor keeps food cold using very little power: ideal for homes on solar or inverter backup.",
+    specs: { "Capacity": "200 litres", "Power use": "About 0.6 kWh per day", "Compressor": "Inverter", "Doors": "Top freezer + fridge" }
+  },
+  {
+    id: "fridge-350l-inverter",
+    name: "350L Frost-Free Inverter Refrigerator",
+    category: "inverter-fridges",
+    retailPrice: 720000,
+    wholesalePrice: 670000,
+    wholesaleMinQty: 3,
+    inStock: true,
+    featured: true,
+    description: "Large frost-free fridge with inverter compressor, so there's no defrosting and power use stays low.",
+    specs: { "Capacity": "350 litres", "Power use": "About 0.9 kWh per day", "Compressor": "Inverter", "Frost-free": "Yes" }
+  },
+  {
+    id: "freezer-200l-inverter",
+    name: "200L Inverter Chest Freezer",
+    category: "inverter-fridges",
+    retailPrice: 395000,
+    wholesalePrice: 365000,
+    wholesaleMinQty: 3,
+    inStock: true,
+    featured: true,
+    description: "Energy-saving chest freezer that holds its temperature for hours during outages.",
+    specs: { "Capacity": "200 litres", "Power use": "About 0.7 kWh per day", "Compressor": "Inverter", "Cold retention": "Up to 30 hours" }
+  },
+  {
+    id: "freezer-300l-inverter",
+    name: "300L Inverter Chest Freezer",
+    category: "inverter-fridges",
+    retailPrice: 520000,
+    wholesalePrice: 480000,
+    wholesaleMinQty: 3,
+    inStock: true,
+    featured: false,
+    description: "Big storage for families, restaurants and cold-room businesses, with low power use.",
+    specs: { "Capacity": "300 litres", "Power use": "About 0.9 kWh per day", "Compressor": "Inverter", "Modes": "Freezer / Chiller switchable" }
+  },
+  {
+    id: "freezer-228l-dc-solar",
+    name: "228L DC Solar Chest Freezer (12/24V)",
+    category: "inverter-fridges",
+    retailPrice: 650000,
+    wholesalePrice: 600000,
+    wholesaleMinQty: 2,
+    inStock: true,
+    featured: false,
+    description: "Runs straight from a 12V or 24V battery and solar panel, with no inverter needed. Perfect for off-grid shops.",
+    specs: { "Capacity": "228 litres", "Voltage": "12V / 24V DC", "Compressor": "DC inverter", "Panels needed": "2 × 300W or more" }
+  },
+
+  // ----- Energy-saving appliances -----
+  {
+    id: "washer-8kg-inverter",
+    name: "8kg Front-Load Washing Machine (Inverter Motor)",
+    category: "home-appliances",
+    retailPrice: 560000,
+    wholesalePrice: 520000,
+    wholesaleMinQty: 3,
+    inStock: true,
+    featured: false,
+    description: "Quiet inverter motor uses less power and water than regular washing machines.",
+    specs: { "Capacity": "8kg", "Motor": "Inverter direct drive", "Spin speed": "1,200 rpm", "Programmes": "15" }
+  },
+  {
+    id: "microwave-25l-inverter",
+    name: "25L Inverter Microwave Oven",
+    category: "home-appliances",
+    retailPrice: 165000,
+    wholesalePrice: 150000,
+    wholesaleMinQty: 5,
+    inStock: true,
+    featured: false,
+    description: "Inverter heating gives steady, even cooking and defrosting with lower power draw.",
+    specs: { "Capacity": "25 litres", "Power": "900W, inverter controlled", "Functions": "Cook, defrost, grill" }
+  },
+  {
+    id: "induction-cooker-2000w",
+    name: "2000W Inverter Induction Cooker",
+    category: "home-appliances",
+    retailPrice: 75000,
+    wholesalePrice: 66000,
+    wholesaleMinQty: 10,
+    inStock: true,
+    featured: false,
+    description: "Cook with electricity instead of gas. Adjustable power levels, so you can match it to your inverter size.",
+    specs: { "Power": "200 – 2,000W adjustable", "Works with": "Iron and steel pots", "Safety": "Auto shut-off, child lock" }
+  },
+  {
+    id: "fan-56-bldc",
+    name: "56-inch BLDC Inverter Ceiling Fan (35W)",
+    category: "home-appliances",
+    retailPrice: 85000,
+    wholesalePrice: 76000,
+    wholesaleMinQty: 10,
+    inStock: true,
+    featured: true,
+    description: "Brushless DC inverter motor uses about half the power of a normal ceiling fan, so it runs much longer on batteries.",
+    specs: { "Size": "56 inches", "Power use": "35W at full speed", "Control": "Remote control", "Motor": "BLDC inverter" }
+  },
+  {
+    id: "fan-16-rechargeable",
+    name: "16-inch Rechargeable Solar-Ready Standing Fan",
+    category: "home-appliances",
+    retailPrice: 65000,
+    wholesalePrice: 56000,
+    wholesaleMinQty: 10,
+    inStock: true,
+    featured: false,
+    description: "Built-in battery and solar input. Keeps you cool during outages, even without an inverter.",
+    specs: { "Size": "16 inches", "Battery": "Built-in, up to 8 hours", "Charging": "AC or solar panel", "Extras": "LED light, USB charging" }
+  },
+  {
+    id: "pump-1hp-inverter",
+    name: "1HP Inverter (Variable-Speed) Water Pump",
+    category: "home-appliances",
+    retailPrice: 285000,
+    wholesalePrice: 260000,
+    wholesaleMinQty: 3,
+    inStock: true,
+    featured: false,
+    description: "Soft-start inverter pump: no big power surge when it starts, so it's safe on solar and inverter systems.",
+    specs: { "Power": "750W", "Start-up": "Soft start (no surge)", "Max height": "40m" }
+  },
+  {
+    id: "iron-1000w-dry",
+    name: "1000W Low-Wattage Dry Iron (Solar-Friendly)",
+    category: "home-appliances",
+    retailPrice: 18000,
+    wholesalePrice: 15000,
+    wholesaleMinQty: 20,
+    inStock: true,
+    featured: false,
+    description: "Irons don't use inverter technology, but this low-wattage model is light on your inverter and batteries compared with typical 2000W+ irons.",
+    specs: { "Power": "1000W", "Type": "Dry iron", "Soleplate": "Non-stick", "Works with": "1.5kVA inverter and above" }
   }
 ];

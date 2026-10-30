@@ -3,7 +3,7 @@
 // =====================================================================
 const STORE = {
   name: "Snok Enterprise",
-  tagline: "Solar panels, batteries, inverters & energy-saving appliances for UK homes and businesses",
+  tagline: "Solar panels, wind turbines, batteries, inverters & energy-saving appliances for UK homes and businesses",
 
   // WhatsApp number that receives orders: country code + number, digits only
   // e.g. 07700 900123  ->  "447700900123"

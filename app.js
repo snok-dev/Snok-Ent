@@ -139,6 +139,7 @@ const ART = {
   "inverter-acs": '<svg viewBox="0 0 120 100"><rect x="12" y="20" width="96" height="36" rx="8" fill="#f8fafc" stroke="#334155" stroke-width="3"/><path d="M22 46h76" stroke="#94a3b8" stroke-width="3"/><circle cx="96" cy="31" r="3" fill="#22c55e"/><g stroke="#38bdf8" stroke-width="3" fill="none" stroke-linecap="round"><path d="M36 64 q-6 8 0 16"/><path d="M60 64 q-6 8 0 16"/><path d="M84 64 q-6 8 0 16"/></g></svg>',
   "inverter-fridges": '<svg viewBox="0 0 120 100"><rect x="34" y="6" width="52" height="88" rx="6" fill="#f8fafc" stroke="#334155" stroke-width="3"/><path d="M34 38h52" stroke="#334155" stroke-width="3"/><path d="M76 16v14M76 46v18" stroke="#64748b" stroke-width="4" stroke-linecap="round"/><text x="52" y="84" font-size="9" fill="#0ea5e9" text-anchor="middle" font-family="sans-serif" font-weight="700">INV</text></svg>',
   "home-appliances": '<svg viewBox="0 0 120 100"><rect x="26" y="8" width="68" height="84" rx="6" fill="#f8fafc" stroke="#334155" stroke-width="3"/><path d="M26 26h68" stroke="#334155" stroke-width="2.5"/><circle cx="38" cy="17" r="3" fill="#f59e0b"/><circle cx="60" cy="58" r="22" fill="#bae6fd" stroke="#334155" stroke-width="3"/><path d="M48 62 q12 -10 24 0" stroke="#0284c7" stroke-width="3" fill="none"/></svg>',
+  "wind-power": '<svg viewBox="0 0 120 100"><path d="M58 40 L54 96 H66 L62 40 Z" fill="#94a3b8"/><g fill="#f8fafc" stroke="#334155" stroke-width="2"><path d="M60 36 L56 4 Q60 2 64 4 Z"/><path d="M60 36 L88 52 Q87 57 83 58 Z"/><path d="M60 36 L32 52 Q33 57 37 58 Z"/></g><circle cx="60" cy="36" r="5" fill="#334155"/><g stroke="#38bdf8" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".8"><path d="M6 24 h20"/><path d="M2 34 h18"/><path d="M8 44 h14"/></g></svg>',
   "accessories": '<svg viewBox="0 0 120 100"><path d="M18 70 C40 20, 70 90, 100 34" fill="none" stroke="#dc2626" stroke-width="6" stroke-linecap="round"/><path d="M18 80 C44 40, 76 98, 102 50" fill="none" stroke="#111827" stroke-width="6" stroke-linecap="round"/><rect x="92" y="22" width="18" height="12" rx="3" fill="#475569"/></svg>'
 };
 
@@ -243,7 +244,7 @@ function renderHome() {
   app.innerHTML =
     '<section class="hero">' +
       '<div class="hero-text">' +
-        '<span class="eyebrow">Solar &amp; inverter specialists</span>' +
+        '<span class="eyebrow">Solar, wind &amp; inverter specialists</span>' +
         "<h1>Cut your energy bills. Keep the power on.</h1>" +
         "<p>" + esc(STORE.tagline) + ". Buy one unit at retail price, or buy in bulk and pay trade prices automatically. All prices include VAT.</p>" +
         '<div class="hero-buttons">' +
@@ -288,7 +289,7 @@ function renderHome() {
     '<section class="paylater-banner">' +
       "<div><span class=\"eyebrow\">Buy now, pay later</span>" +
       "<h2>Get it today. Spread the cost.</h2>" +
-      "<p>Solar and battery systems, heat pumps, fridges and more on " + STORE.payLater.plans.length +
+      "<p>Solar, wind and battery systems, heat pumps, fridges and more on " + STORE.payLater.plans.length +
         (allPlansInterestFree() ? " interest-free" : " flexible") + " plans, from 3 to 12 months.</p></div>" +
       '<a href="#/pay-later" class="btn btn-primary btn-large">See payment plans</a>' +
     "</section>";
@@ -400,7 +401,7 @@ function renderProduct(id) {
         (product.inStock ? '<span class="stock in">● In stock</span>' : '<span class="stock out">● Out of stock</span>') +
         '<p class="product-description">' + esc(product.description) + "</p>" +
         '<div class="price-table">' +
-          '<div><span>Retail price (inc. VAT)</span><strong>' + money(product.retailPrice) + "</strong><small>1 – " + (product.wholesaleMinQty - 1) + " units</small></div>" +
+          '<div><span>Retail price (inc. VAT)</span><strong>' + money(product.retailPrice) + "</strong><small>" + (product.wholesaleMinQty === 2 ? "1 unit" : "1 – " + (product.wholesaleMinQty - 1) + " units") + "</small></div>" +
           '<div class="wholesale"><span>Wholesale price</span><strong>' + money(product.wholesalePrice) + "</strong><small>" + product.wholesaleMinQty + "+ units, each</small></div>" +
         "</div>" +
         (product.inStock
@@ -419,6 +420,7 @@ function renderProduct(id) {
               "<span>Or pay from <strong>" + money(lowestMonthly(product.retailPrice)) + "/month</strong> with Buy Now, Pay Later</span><span>See plans →</span></a>"
           : "") +
         '<a class="btn btn-whatsapp" id="ask-whatsapp" target="_blank" rel="noopener">Ask about this product on WhatsApp</a>' +
+        (product.category === "wind-power" ? windAdvice() : "") +
         (specsRows ? '<h3>Specifications</h3><table class="specs">' + specsRows + "</table>" : "") +
       "</div>" +
     "</section>" +
@@ -472,6 +474,22 @@ function renderProduct(id) {
     updatePreview();
   });
   updatePreview();
+}
+
+// Honest guidance shown on every wind product
+function windAdvice() {
+  return (
+    '<div class="advice-box">' +
+      "<h3>Before you buy a wind turbine</h3>" +
+      "<ul>" +
+        "<li><strong>Check your wind.</strong> Turbines work best on open, exposed sites with an average wind speed of 5 m/s or more. Rooftops in towns and cities are usually too sheltered and turbulent. A <a href=\"#/product/wind-anemometer-logger\">wind speed logger</a> tells you for sure.</li>" +
+        "<li><strong>Planning.</strong> In England, some small turbines can go up without planning permission (permitted development) if they meet size, location and noise limits and are MCS certified. Otherwise you'll need planning permission. Rules differ in Scotland, Wales and Northern Ireland, so check with your local council first.</li>" +
+        "<li><strong>Installation.</strong> Masts, foundations and electrical connections should be installed by a qualified installer. To be paid for exported electricity through the Smart Export Guarantee, the turbine and installation must be MCS certified.</li>" +
+        "<li><strong>Pair it with solar.</strong> Wind is often strongest in winter when solar is weakest, so together they give steadier power all year.</li>" +
+      "</ul>" +
+      '<a target="_blank" rel="noopener" href="' + whatsappLink("Hello " + STORE.name + ", I'd like advice on whether a wind turbine suits my property.") + '">Ask us if wind suits your property →</a>' +
+    "</div>"
+  );
 }
 
 // ----- Cart -----
@@ -1056,8 +1074,10 @@ function renderAbout() {
         (allPlansInterestFree() ? " at 0% interest" : "") + ", for purchases from " + money(STORE.payLater.minimumAmount) + ". Plans are subject to approval."],
     ["Do you install?",
       "We can arrange installation through qualified installers. Solar PV and battery systems should be installed by an MCS-certified installer, which you need to earn money for exported electricity through the Smart Export Guarantee (SEG). Air conditioners and heat pumps must be fitted by an F-gas certified engineer, and all electrical work must follow UK wiring regulations (BS 7671)."],
+    ["Is a wind turbine right for my home?",
+      "Small wind turbines work well on open, exposed sites such as farms, rural homes and coastal properties, ideally with an average wind speed of 5 m/s or more. They rarely perform well on rooftops in towns and cities. We recommend measuring your wind with a <a href=\"#/product/wind-anemometer-logger\">wind speed logger</a> first. Some small turbines in England can be installed under permitted development if they meet strict size, location and MCS requirements; otherwise planning permission is needed, so check with your local council."],
     ["Can I connect a system to the grid?",
-      "Yes. Grid-connected solar and battery systems must be notified to, or approved by, your local electricity network operator (under G98 or G99). Your installer normally handles this for you."],
+      "Yes. Grid-connected solar, wind and battery systems must be notified to, or approved by, your local electricity network operator (under G98 or G99). Your installer normally handles this for you."],
     ["What size of system do I need?",
       'Try our <a href="#/calculator">Solar Calculator</a> for an estimate, then chat with us to confirm.'],
     ["Can I return something?",
@@ -1071,9 +1091,9 @@ function renderAbout() {
     '<div class="page-head"><h1>About Snok Enterprise</h1></div>' +
     '<section class="about-grid">' +
       "<div>" +
-        '<p class="lead">Snok Enterprise supplies solar panels, battery storage, hybrid inverters and energy-efficient inverter appliances to homeowners and businesses across the United Kingdom.</p>' +
+        '<p class="lead">Snok Enterprise supplies renewable energy equipment, including solar panels, wind turbines, battery storage and hybrid inverters, plus energy-efficient inverter appliances, to homeowners and businesses across the United Kingdom.</p>' +
         "<p>With energy prices high and more of us working from home, we help households and businesses generate their own electricity, store it for the evening, keep the lights on during power cuts and switch to appliances that use far less power.</p>" +
-        "<p>We sell everything for a complete system: solar panels, hybrid inverters, lithium batteries, charge controllers, cables and mounting kits, plus inverter heat pumps and air conditioners, fridges, freezers and other energy-saving appliances. Homeowners pay retail prices, and installers, electricians, resellers and businesses get wholesale prices automatically when they buy in quantity.</p>" +
+        "<p>We sell everything for a complete system: solar panels, small wind turbines and masts, hybrid inverters, lithium batteries, charge controllers, cables and mounting kits, plus inverter heat pumps and air conditioners, fridges, freezers and other energy-saving appliances. Homeowners pay retail prices, and installers, electricians, resellers and businesses get wholesale prices automatically when they buy in quantity.</p>" +
         "<p>Our goal is simple: lower bills and reliable power, with honest advice about what you actually need.</p>" +
       "</div>" +
       '<div class="about-card">' +
@@ -1085,7 +1105,7 @@ function renderAbout() {
       '<div class="about-card">' +
         "<h3>For homeowners</h3>" +
         '<ul class="check-list">' +
-          "<li>Cut your electricity bills with solar panels</li>" +
+          "<li>Cut your electricity bills with solar panels and, on windy sites, a wind turbine</li>" +
           "<li>Store daytime solar, or cheap off-peak electricity, in a battery for the evening</li>" +
           "<li>Backup power for essentials during power cuts</li>" +
           "<li>Efficient heating and cooling with inverter heat pumps</li>" +
@@ -1192,7 +1212,7 @@ function renderPayLater(params) {
     '<section class="paylater-hero">' +
       '<span class="eyebrow">Buy now, pay later</span>' +
       "<h1>Get it today. Spread the cost.</h1>" +
-      "<p>Spread the cost of solar panels, battery storage, inverters, heat pumps, fridges and freezers over monthly payments" +
+      "<p>Spread the cost of solar panels, wind turbines, battery storage, inverters, heat pumps, fridges and freezers over monthly payments" +
         (allPlansInterestFree() ? ", <strong>0% interest and no fees</strong>" : "") + ", on purchases from " + money(minimum) + ".</p>" +
     "</section>" +
 

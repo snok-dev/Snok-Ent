@@ -21,7 +21,8 @@ const CATEGORIES = [
   { id: "accessories", name: "Cables & Accessories" },
   { id: "inverter-acs", name: "Air Conditioners & Heat Pumps" },
   { id: "inverter-fridges", name: "Inverter Fridges & Freezers" },
-  { id: "home-appliances", name: "Energy-Saving Appliances" }
+  { id: "home-appliances", name: "Energy-Saving Appliances" },
+  { id: "wind-power", name: "Wind Turbines & Wind Power" }
 ];
 
 const PRODUCTS = [
@@ -608,5 +609,139 @@ const PRODUCTS = [
     featured: false,
     description: "Irons don't use inverter technology, but this low-wattage model is light on your inverter and batteries compared with typical 2000W+ irons.",
     specs: { "Power": "1000W", "Type": "Dry iron", "Soleplate": "Non-stick", "Works with": "1.5kVA inverter and above" }
+  },
+
+  // ----- Wind power -----
+  {
+    id: "wind-anemometer-logger",
+    name: "Wind Speed Logger (Anemometer) – Site Survey Kit",
+    category: "wind-power",
+    retailPrice: 69,
+    wholesalePrice: 55,
+    wholesaleMinQty: 5,
+    inStock: true,
+    featured: false,
+    description: "Measure the wind at your site for a few months before buying a turbine. Records average and peak wind speeds so you know what a turbine will really produce.",
+    specs: { "Measures": "Wind speed, gusts and direction", "Logging": "Up to 12 months, export to PC", "Mounting": "Pole clamp included", "Tip": "A good site averages 5 m/s or more" }
+  },
+  {
+    id: "wind-400w-12v",
+    name: "400W 12V Small Wind Turbine",
+    category: "wind-power",
+    retailPrice: 249,
+    wholesalePrice: 199,
+    wholesaleMinQty: 5,
+    inStock: true,
+    featured: false,
+    description: "Compact 3-blade turbine for charging 12V batteries on boats, caravans, cabins, allotments and garden offices. Pairs well with solar for year-round charging.",
+    specs: { "Rated power": "400W at 12 m/s", "Voltage": "12V DC", "Start-up wind speed": "2.5 m/s", "Rotor diameter": "1.2m", "Controller": "Required (sold separately)" }
+  },
+  {
+    id: "wind-600w-24v",
+    name: "600W 24V Wind Turbine",
+    category: "wind-power",
+    retailPrice: 389,
+    wholesalePrice: 329,
+    wholesaleMinQty: 5,
+    inStock: true,
+    featured: false,
+    description: "Quiet, low-start turbine for off-grid homes and workshops on 24V battery systems.",
+    specs: { "Rated power": "600W at 12 m/s", "Voltage": "24V DC", "Start-up wind speed": "2.5 m/s", "Rotor diameter": "1.4m", "Noise": "Under 45 dB at 5 m/s" }
+  },
+  {
+    id: "wind-1kw-48v",
+    name: "1kW 48V Horizontal-Axis Wind Turbine",
+    category: "wind-power",
+    retailPrice: 899,
+    wholesalePrice: 789,
+    wholesaleMinQty: 3,
+    inStock: true,
+    featured: true,
+    description: "Our most popular home turbine. Charges a 48V battery bank alongside solar panels, so you keep generating through windy winter months when solar output is low.",
+    specs: { "Rated power": "1,000W at 11 m/s", "Voltage": "48V DC", "Start-up wind speed": "2.5 m/s", "Rotor diameter": "2.2m", "Typical output": "1,000 – 1,800 kWh a year on a good site" }
+  },
+  {
+    id: "wind-1kw-vertical",
+    name: "1kW Vertical-Axis Wind Turbine",
+    category: "wind-power",
+    retailPrice: 1299,
+    wholesalePrice: 1149,
+    wholesaleMinQty: 2,
+    inStock: true,
+    featured: false,
+    description: "Vertical-axis design catches wind from any direction and copes well with gusty conditions. Quiet and compact, though rooftop sites in towns usually produce much less than open rural sites.",
+    specs: { "Rated power": "1,000W at 12 m/s", "Voltage": "48V DC", "Design": "Vertical axis, 5 blades", "Height of rotor": "1.8m", "Noise": "Very low" }
+  },
+  {
+    id: "wind-3kw-48v",
+    name: "3kW 48V Wind Turbine with Controller",
+    category: "wind-power",
+    retailPrice: 3499,
+    wholesalePrice: 3149,
+    wholesaleMinQty: 2,
+    inStock: true,
+    featured: false,
+    description: "Powerful turbine for farms, smallholdings, rural homes and businesses with open, windy sites. Supplied with a matching charge controller and dump load.",
+    specs: { "Rated power": "3,000W at 11 m/s", "Voltage": "48V DC", "Rotor diameter": "3.6m", "Includes": "Charge controller + dump load", "Typical output": "4,000 – 6,000 kWh a year on a good site" }
+  },
+  {
+    id: "wind-solar-hybrid-controller",
+    name: "Wind & Solar Hybrid Charge Controller (12/24V)",
+    category: "wind-power",
+    retailPrice: 189,
+    wholesalePrice: 159,
+    wholesaleMinQty: 5,
+    inStock: true,
+    featured: false,
+    description: "Charges one battery bank from a wind turbine and solar panels at the same time, with automatic braking in high winds.",
+    specs: { "Wind input": "Up to 600W", "Solar input": "Up to 400W", "Voltage": "12V / 24V auto", "Protection": "Over-speed braking, over-charge, reverse polarity" }
+  },
+  {
+    id: "wind-controller-2kw-48v",
+    name: "2kW 48V Wind Charge Controller with Dump Load",
+    category: "wind-power",
+    retailPrice: 329,
+    wholesalePrice: 289,
+    wholesaleMinQty: 5,
+    inStock: true,
+    featured: false,
+    description: "MPPT wind controller for 1–2kW turbines on 48V systems. Diverts excess power to the dump load to keep the turbine and batteries safe.",
+    specs: { "Turbine size": "Up to 2,000W", "Voltage": "48V", "Type": "MPPT with dump load", "Display": "LCD with power and energy readings" }
+  },
+  {
+    id: "wind-dump-load-2kw",
+    name: "2kW Dump Load Resistor",
+    category: "wind-power",
+    retailPrice: 79,
+    wholesalePrice: 62,
+    wholesaleMinQty: 10,
+    inStock: true,
+    featured: false,
+    description: "Safely absorbs extra power when your batteries are full, so the turbine never runs without a load. Essential for most battery-charging turbines.",
+    specs: { "Rating": "2,000W", "Voltage": "24V / 48V", "Cooling": "Air-cooled, wall mounted" }
+  },
+  {
+    id: "wind-mast-6m-tiltup",
+    name: "6m Galvanised Tilt-Up Turbine Mast Kit",
+    category: "wind-power",
+    retailPrice: 449,
+    wholesalePrice: 389,
+    wholesaleMinQty: 3,
+    inStock: true,
+    featured: false,
+    description: "Hinged mast that tilts down for safe installation and servicing at ground level. Includes guy wires, anchors and fittings.",
+    specs: { "Height": "6m", "Material": "Hot-dip galvanised steel", "Fits": "Turbines up to 1.5kW", "Includes": "Guy wires, ground anchors, gin pole" }
+  },
+  {
+    id: "wind-solar-kit-2kw",
+    name: "2kW Wind & Solar Hybrid Home Kit",
+    category: "wind-power",
+    retailPrice: 4999,
+    wholesalePrice: 4599,
+    wholesaleMinQty: 2,
+    inStock: true,
+    featured: true,
+    description: "Generate power day and night, summer and winter: wind tops up your battery when the sun isn't shining. A complete 48V system for rural homes, farms and off-grid properties.",
+    specs: { "Wind turbine": "1kW 48V", "Solar panels": "2 × 550W", "Battery": "5kWh lithium (48V)", "Inverter": "5kVA 48V hybrid", "Includes": "Wind controller, dump load, 6m mast, cables" }
   }
 ];

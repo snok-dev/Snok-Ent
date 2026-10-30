@@ -1,6 +1,6 @@
 # Snok Enterprise – Online Store
 
-An online store for UK homeowners and businesses selling solar and inverter technology: solar panels, inverters, batteries, charge controllers, complete solar kits, solar lights, cables and accessories, **inverter air conditioners, inverter fridges and freezers, and energy-saving appliances**, at **retail and wholesale prices**, with **Buy Now, Pay Later** plans.
+An online store for UK homeowners and businesses selling solar and inverter technology: solar panels, inverters, batteries, charge controllers, complete solar kits, solar lights, cables and accessories, **small wind turbines and wind power equipment, inverter air conditioners and heat pumps, inverter fridges and freezers, and energy-saving appliances**, at **retail and wholesale prices**, with **Buy Now, Pay Later** plans.
 
 It's a static website with no server, database or paid service. It can be hosted for free on GitHub Pages.
 
